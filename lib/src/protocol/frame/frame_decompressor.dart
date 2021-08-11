@@ -1,16 +1,16 @@
 part of dart_cassandra_cql.protocol;
 
 class FrameDecompressor {
-  Compression _compression;
+  Compression? _compression;
 
   FrameDecompressor(this._compression);
 
   void handleData(Frame frame, EventSink<Frame> sink) {
-    if ((frame.header.flags & HeaderFlag.COMPRESSION.value) ==
+    if ((frame.header!.flags & HeaderFlag.COMPRESSION.value) ==
         HeaderFlag.COMPRESSION.value) {
       // Fetch compression codec
-      Codec<Object, Uint8List> compressionCodec =
-          _compression != null ? getCodec(_compression.value) : null;
+      Codec<Object, Uint8List?>? compressionCodec =
+          _compression != null ? getCodec(_compression!.value) : null;
 
       try {
         if (compressionCodec == null && _compression == null) {
@@ -28,7 +28,7 @@ class FrameDecompressor {
             Uint8List.view(frame.body.buffer, 0, frame.body.lengthInBytes);
 
         // Generate uncompressed frame
-        bodyData = compressionCodec.decode(bodyData);
+        bodyData = compressionCodec.decode(bodyData) as Uint8List;
         frame = Frame.fromParts(frame.header,
             ByteData.view(bodyData.buffer, 0, bodyData.lengthInBytes));
       } catch (e, trace) {
@@ -40,7 +40,7 @@ class FrameDecompressor {
                     "An error occurred while invoking '${_compression}' codec (decompression): ${e}",
                     trace),
             trace);
-        message.streamId = frame.header.streamId;
+        message.streamId = frame.header!.streamId;
         sink.addError(message);
         return;
       }

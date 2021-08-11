@@ -6,7 +6,7 @@ part of dart_cassandra_cql.protocol;
  */
 class ExceptionMessage extends Message {
   dynamic exception;
-  StackTrace stackTrace;
+  StackTrace? stackTrace;
 
   ExceptionMessage(this.exception, this.stackTrace) : super(Opcode.ERROR);
 }

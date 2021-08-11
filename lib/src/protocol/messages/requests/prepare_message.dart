@@ -1,12 +1,12 @@
 part of dart_cassandra_cql.protocol;
 
 class PrepareMessage extends Message implements RequestMessage {
-  String query;
+  String? query;
 
   PrepareMessage() : super(Opcode.PREPARE);
 
-  void write(TypeEncoder encoder) {
+  void write(TypeEncoder? encoder) {
     // Send the query as a long string
-    encoder.writeString(query, SizeType.LONG);
+    encoder!.writeString(query, SizeType.LONG);
   }
 }

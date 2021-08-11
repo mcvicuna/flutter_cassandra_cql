@@ -1,8 +1,8 @@
 part of dart_cassandra_cql.protocol;
 
 abstract class ResultMessage extends Message {
-  ResultMetadata metadata;
-  List<Map<String, Object>> rows;
+  ResultMetadata? metadata;
+  List<Map<String?, Object?>>? rows;
 
   ResultMessage() : super(Opcode.RESULT);
 
@@ -49,7 +49,7 @@ abstract class ResultMessage extends Message {
     }
 
     // Parse column specs
-    metadata.colSpec = LinkedHashMap<String, TypeSpec>();
+    metadata.colSpec = LinkedHashMap<String?, TypeSpec>();
     for (int colIndex = colCount; colIndex > 0; colIndex--) {
       // Skip over col-specific table spec (<keyspace><table name>)
       if (!globalTableSpec) {
@@ -58,7 +58,7 @@ abstract class ResultMessage extends Message {
       }
 
       // Parse column name and type
-      metadata.colSpec[decoder.readString(SizeType.SHORT)] =
+      metadata.colSpec![decoder.readString(SizeType.SHORT)] =
           decoder.readTypeOption();
     }
 

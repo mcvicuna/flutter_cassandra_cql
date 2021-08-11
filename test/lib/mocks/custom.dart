@@ -5,15 +5,15 @@ import "dart:convert";
 import '../../../lib/src/types.dart';
 
 class CustomJson implements CustomType {
-  Map payload;
+  Map? payload;
 
   String get customTypeClass => "com.achilleasa.cassandra.cqltypes.Json";
 
   CustomJson(this.payload);
 }
 
-class CustomJsonEncoder extends Converter<CustomJson, Uint8List> {
-  Uint8List convert(CustomJson input) {
+class CustomJsonEncoder extends Converter<CustomJson, Uint8List?> {
+  Uint8List? convert(CustomJson input) {
     return input.payload == null
         ? null
         : new Uint8List.fromList(json.encode(input.payload).codeUnits);
@@ -22,18 +22,18 @@ class CustomJsonEncoder extends Converter<CustomJson, Uint8List> {
 
 class CustomJsonDecoder extends Converter<Uint8List, CustomJson> {
   CustomJson convert(Uint8List input) {
-    Map payload =
+    Map? payload =
         input == null ? null : new JsonDecoder().convert(utf8.decode(input));
 
     return new CustomJson(payload);
   }
 }
 
-class CustomJsonCodec extends Codec<CustomJson, Uint8List> {
+class CustomJsonCodec extends Codec<CustomJson, Uint8List?> {
   final CustomJsonEncoder _encoder = new CustomJsonEncoder();
   final CustomJsonDecoder _decoder = new CustomJsonDecoder();
 
-  Converter<CustomJson, Uint8List> get encoder {
+  Converter<CustomJson, Uint8List?> get encoder {
     return _encoder;
   }
 

@@ -2,13 +2,13 @@ part of dart_cassandra_cql.protocol;
 
 abstract class Message {
   Opcode opcode;
-  int streamId;
+  int? streamId;
 
   Message(Opcode this.opcode);
 }
 
 abstract class RequestMessage {
-  Opcode opcode;
+  late Opcode opcode;
 
-  void write(TypeEncoder encoder);
+  void write(TypeEncoder? encoder);
 }

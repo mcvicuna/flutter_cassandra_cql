@@ -2,13 +2,13 @@ part of dart_cassandra_cql.protocol;
 
 class FrameParser {
   final ChunkedInputReader _inputBuffer = ChunkedInputReader();
-  FrameHeader _parsedHeader;
-  Uint8List _bodyData;
+  FrameHeader? _parsedHeader;
+  Uint8List? _bodyData;
   int _bodyWriteOffset = 0;
-  int _headerSizeInBytes;
-  ProtocolVersion _protocolVersion;
+  int? _headerSizeInBytes;
+  ProtocolVersion? _protocolVersion;
 
-  void handleData(Uint8List chunk, EventSink<Frame> sink) {
+  void handleData(Uint8List? chunk, EventSink<Frame> sink) {
     try {
       // Append incoming chunk to input buffer
       if (chunk != null) {
@@ -19,7 +19,7 @@ class FrameParser {
       if (_parsedHeader == null) {
         if (_headerSizeInBytes == null) {
           // Peek the first byte to figure out the version
-          int version = _inputBuffer.peekNextByte();
+          int? version = _inputBuffer.peekNextByte();
           if (version == HeaderVersion.RESPONSE_V2.value ||
               version == HeaderVersion.REQUEST_V2.value) {
             _headerSizeInBytes = FrameHeader.SIZE_IN_BYTES_V2;
@@ -33,13 +33,13 @@ class FrameParser {
 
         // Not enough bytes to parse header; wait till we get more
         if (_headerSizeInBytes == null ||
-            _inputBuffer.length < _headerSizeInBytes) {
+            _inputBuffer.length < _headerSizeInBytes!) {
           return;
         }
 
         // Extract header bytes and parse them
-        Uint8List headerBytes = Uint8List(_headerSizeInBytes);
-        _inputBuffer.read(headerBytes, _headerSizeInBytes);
+        Uint8List? headerBytes = Uint8List(_headerSizeInBytes!);
+        _inputBuffer.read(headerBytes, _headerSizeInBytes!);
         //dump = File("${DateTime.now()}.dump");
         //dump.writeAsBytesSync(headerBytes);
         _parsedHeader = TypeDecoder.fromBuffer(
@@ -47,30 +47,30 @@ class FrameParser {
             .readHeader();
         headerBytes = null;
 
-        if (_parsedHeader.length > FrameHeader.MAX_LENGTH_IN_BYTES) {
+        if (_parsedHeader!.length! > FrameHeader.MAX_LENGTH_IN_BYTES) {
           throw DriverException(
-              "Frame size cannot be larger than ${FrameHeader.MAX_LENGTH_IN_BYTES} bytes. Attempted to read ${_parsedHeader.length} bytes");
+              "Frame size cannot be larger than ${FrameHeader.MAX_LENGTH_IN_BYTES} bytes. Attempted to read ${_parsedHeader!.length} bytes");
         }
 
         // Allocate buffer for body and reset write offset
-        _bodyData = Uint8List(_parsedHeader.length);
+        _bodyData = Uint8List(_parsedHeader!.length!);
         _bodyWriteOffset = 0;
       } else {
         // Copy pending body data
         _bodyWriteOffset += _inputBuffer.read(_bodyData,
-            _parsedHeader.length - _bodyWriteOffset, _bodyWriteOffset);
+            _parsedHeader!.length! - _bodyWriteOffset, _bodyWriteOffset);
       }
 
       // If we are done emit the frame to the next pipeline stage and cleanup
-      if (_bodyWriteOffset == _parsedHeader.length) {
+      if (_bodyWriteOffset == _parsedHeader!.length) {
         // Ignore messages with unknown opcodes
-        if (_parsedHeader.opcode != null) {
+        if (_parsedHeader!.opcode != null) {
           //dump.writeAsBytesSync(_bodyData, mode : FileMode.APPEND);
-          sink.add(Frame.fromParts(
-              _parsedHeader, ByteData.view(_bodyData.buffer)));
+          sink.add(
+              Frame.fromParts(_parsedHeader, ByteData.view(_bodyData!.buffer)));
         } else {
           throw DriverException(
-              "Unknown frame with opcode 0x${_parsedHeader.unknownOpcodeValue.toRadixString(16)} and payload size 0x${_parsedHeader.length}");
+              "Unknown frame with opcode 0x${_parsedHeader!.unknownOpcodeValue.toRadixString(16)} and payload size 0x${_parsedHeader!.length}");
         }
         _parsedHeader = null;
         _headerSizeInBytes = null;
@@ -87,7 +87,7 @@ class FrameParser {
       // / Emit an exception message
       ExceptionMessage message = ExceptionMessage(e,
           e is DriverException && e.stackTrace != null ? e.stackTrace : trace);
-      message.streamId = _parsedHeader.streamId;
+      message.streamId = _parsedHeader!.streamId;
 
       _parsedHeader = null;
       _headerSizeInBytes = null;

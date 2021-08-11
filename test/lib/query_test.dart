@@ -216,7 +216,7 @@ main({bool enableLogger: true}) {
         expect(
             () => new cql.Query("SELECT foo FROM bar WHERE baz=? AND boo = ?",
                 bindings: [1]).expandedQuery,
-            throwsA(predicate((e) =>
+            throwsA(predicate((dynamic e) =>
                 e is ArgumentError &&
                 e.message == "Missing argument '1' from bindings list")));
       });
@@ -393,7 +393,7 @@ main({bool enableLogger: true}) {
               () => new cql.Query(
                   "SELECT foo FROM bar WHERE baz=:baz AND boo =:boo",
                   bindings: {'boo': 1}).expandedQuery,
-              throwsA(predicate((e) =>
+              throwsA(predicate((dynamic e) =>
                   e is ArgumentError &&
                   e.message == "Missing binding for named placeholder 'baz'")));
         });
@@ -402,7 +402,7 @@ main({bool enableLogger: true}) {
               () => new cql.Query(
                   "SELECT foo FROM bar WHERE baz=:\$ AND boo =:boo",
                   bindings: {'boo': 1}).expandedQuery,
-              throwsA(predicate((e) =>
+              throwsA(predicate((dynamic e) =>
                   e is ArgumentError &&
                   e.message ==
                       'Expected named placeholder to begin at offset 30')));

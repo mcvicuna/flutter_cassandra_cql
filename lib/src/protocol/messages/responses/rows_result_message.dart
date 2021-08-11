@@ -7,9 +7,9 @@ class RowsResultMessage extends ResultMessage {
 
     // Parse rows
     int rowCount = decoder.readUInt();
-    rows = List<Map<String, Object>>.generate(rowCount, (int rowIndex) {
-      Map<String, Object> row = LinkedHashMap();
-      metadata.colSpec.forEach((String colName, TypeSpec typeSpec) {
+    rows = List<Map<String?, Object?>>.generate(rowCount, (int rowIndex) {
+      Map<String?, Object?> row = LinkedHashMap();
+      metadata!.colSpec!.forEach((String? colName, TypeSpec typeSpec) {
         row[colName] = decoder.readTypedValue(typeSpec, size: SizeType.LONG);
       });
       return row;

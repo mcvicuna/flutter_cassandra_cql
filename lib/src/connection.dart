@@ -11,6 +11,7 @@ import 'types.dart';
 import 'protocol.dart';
 import 'query.dart';
 import 'exceptions.dart';
+import 'package:collection/collection.dart' show IterableExtension;
 
 // Connection pools
 part "connection/async_queue.dart";

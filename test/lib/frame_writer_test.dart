@@ -13,7 +13,7 @@ main({bool enableLogger: true}) {
     mock.initLogger();
   }
 
-  FrameWriter frameWriter;
+  late FrameWriter frameWriter;
   mock.MockChunkedOutputWriter mockOutputWriter =
       new mock.MockChunkedOutputWriter();
 

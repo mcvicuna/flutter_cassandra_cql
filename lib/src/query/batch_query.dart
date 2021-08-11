@@ -1,15 +1,15 @@
 part of dart_cassandra_cql.query;
 
 class BatchQuery extends QueryInterface {
-  List<Query> queryList = List<Query>();
+  List<Query> queryList = [];
 
   Consistency consistency;
-  Consistency serialConsistency;
+  Consistency? serialConsistency;
   BatchType type;
 
   BatchQuery(
       {Consistency this.consistency: Consistency.QUORUM,
-      Consistency this.serialConsistency,
+      Consistency? this.serialConsistency,
       BatchType this.type: BatchType.LOGGED});
 
   /**

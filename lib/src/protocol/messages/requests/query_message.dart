@@ -1,12 +1,12 @@
 part of dart_cassandra_cql.protocol;
 
 class QueryMessage extends Message implements RequestMessage {
-  Consistency consistency;
-  Consistency serialConsistency;
-  String query;
-  Object bindings;
-  int resultPageSize;
-  Uint8List pagingState;
+  late Consistency consistency;
+  Consistency? serialConsistency;
+  String? query;
+  Object? bindings;
+  int? resultPageSize;
+  Uint8List? pagingState;
 
   QueryMessage() : super(Opcode.QUERY);
 
@@ -43,20 +43,20 @@ class QueryMessage extends Message implements RequestMessage {
     }
 
     if (resultPageSize != null) {
-      encoder.writeUInt32(resultPageSize);
+      encoder.writeUInt32(resultPageSize!);
     }
 
     if (pagingState != null) {
       encoder.writeBytes(pagingState, SizeType.LONG);
     }
     if (serialConsistency != null) {
-      encoder.writeUInt16(serialConsistency.value);
+      encoder.writeUInt16(serialConsistency!.value);
     }
   }
 
-  void write(TypeEncoder encoder) {
+  void write(TypeEncoder? encoder) {
     // Write query
-    encoder.writeString(query, SizeType.LONG);
+    encoder!.writeString(query, SizeType.LONG);
 
     // Write query parameters
     _writeQueryParameters(encoder);

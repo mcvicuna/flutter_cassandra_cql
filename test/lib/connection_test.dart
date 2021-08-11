@@ -16,7 +16,7 @@ main({bool enableLogger: true}) {
   const String SERVER_HOST = "127.0.0.1";
   const int SERVER_PORT = 32000;
   mock.MockServer server = new mock.MockServer();
-  cql.Connection conn;
+  cql.Connection? conn;
 
   group("Connection", () {
     setUp(() {
@@ -28,7 +28,7 @@ main({bool enableLogger: true}) {
       server.setCompression(null);
       List<Future> cleanupFutures = [server.shutdown()];
       if (conn != null) {
-        cleanupFutures.add(conn.close(drain: false));
+        cleanupFutures.add(conn!.close(drain: false));
       }
 
       return Future.wait(cleanupFutures);
@@ -50,9 +50,9 @@ main({bool enableLogger: true}) {
         expect(trace, isNotNull);
       }
 
-      conn
+      conn!
           .open()
-          .then((_) => conn.execute(new cql.Query("SELECT * FROM test")))
+          .then((_) => conn!.execute(new cql.Query("SELECT * FROM test")))
           .catchError(expectAsync(handleError));
     });
 
@@ -67,7 +67,7 @@ main({bool enableLogger: true}) {
         expect(e, new isInstanceOf<cqlEx.ConnectionFailedException>());
       }
 
-      conn.open().catchError(expectAsync(handleError));
+      conn!.open().catchError(expectAsync(handleError));
     });
 
     test("stream reservation timeout exception", () {
@@ -83,12 +83,12 @@ main({bool enableLogger: true}) {
         expect(e.toString(), startsWith("StreamReservationException"));
       }
 
-      conn.open().then((_) {
+      conn!.open().then((_) {
         // Future f1 will grab our stream writer and wait for a server connection
-        conn.execute(new cql.Query("SELECT * FROM test")).catchError((_) {});
+        conn!.execute(new cql.Query("SELECT * FROM test")).catchError((_) {});
         // With a small delay, try a second query which should fail with a reservation timeout exception
         return new Future.delayed(new Duration(milliseconds: 10),
-            () => conn.execute(new cql.Query("SELECT * FROM test")));
+            () => conn!.execute(new cql.Query("SELECT * FROM test")));
       }).catchError(expectAsync(handleError));
     });
 
@@ -97,8 +97,8 @@ main({bool enableLogger: true}) {
           new cql.PoolConfiguration(protocolVersion: cql.ProtocolVersion.V2);
       conn = new cql.Connection("conn-0", SERVER_HOST, SERVER_PORT,
           config: config);
-      Future f1 = conn.open();
-      Future f2 = conn.open();
+      Future f1 = conn!.open();
+      Future f2 = conn!.open();
       expect(f1, equals(f2));
 
       return f1;
@@ -109,12 +109,12 @@ main({bool enableLogger: true}) {
           new cql.PoolConfiguration(protocolVersion: cql.ProtocolVersion.V2);
       conn = new cql.Connection("conn-0", SERVER_HOST, SERVER_PORT,
           config: config);
-      return conn.open();
+      return conn!.open();
     });
 
     test("V2 handshake (using default pool configuration)", () {
       conn = new cql.Connection("conn-0", SERVER_HOST, SERVER_PORT);
-      return conn.open();
+      return conn!.open();
     });
 
     test("V2 handshake and keyspace selection", () {
@@ -123,7 +123,7 @@ main({bool enableLogger: true}) {
           new cql.PoolConfiguration(protocolVersion: cql.ProtocolVersion.V2);
       conn = new cql.Connection("conn-0", SERVER_HOST, SERVER_PORT,
           config: config);
-      return conn.open();
+      return conn!.open();
     });
 
     test("V3 handshake", () {
@@ -131,7 +131,7 @@ main({bool enableLogger: true}) {
           new cql.PoolConfiguration(protocolVersion: cql.ProtocolVersion.V3);
       conn = new cql.Connection("conn-0", SERVER_HOST, SERVER_PORT,
           config: config);
-      return conn.open();
+      return conn!.open();
     });
 
     test("lost exception", () {
@@ -144,10 +144,10 @@ main({bool enableLogger: true}) {
         expect(e, new isInstanceOf<cqlEx.ConnectionFailedException>());
       }
 
-      conn
+      conn!
           .open()
           .then((_) => server.shutdown())
-          .then((_) => conn.execute(new cql.Query("SELECT * FROM foo")))
+          .then((_) => conn!.execute(new cql.Query("SELECT * FROM foo")))
           .catchError(expectAsync(handleError));
     });
 
@@ -158,7 +158,7 @@ main({bool enableLogger: true}) {
       conn = new cql.Connection("conn-0", SERVER_HOST, SERVER_PORT,
           config: config, defaultKeyspace: "test");
 
-      expect(conn.open(), completes);
+      expect(conn!.open(), completes);
     });
 
     test("query (V2)", () {
@@ -168,8 +168,8 @@ main({bool enableLogger: true}) {
       conn = new cql.Connection("conn-0", SERVER_HOST, SERVER_PORT,
           config: config);
       expect(
-          conn.open().then((_) {
-            return conn.execute(new cql.Query("SELECT * from test.type_test"));
+          conn!.open().then((_) {
+            return conn!.execute(new cql.Query("SELECT * from test.type_test"));
           }), completion((cql.RowsResultMessage res) {
         expect(res.rows.length, equals(1));
         Map<String, Object> row = res.rows.first;
@@ -202,8 +202,8 @@ main({bool enableLogger: true}) {
       conn = new cql.Connection("conn-0", SERVER_HOST, SERVER_PORT,
           config: config);
       expect(
-          conn.open().then((_) {
-            return conn
+          conn!.open().then((_) {
+            return conn!
                 .execute(new cql.Query("SELECT * FROM test.user_profiles"));
           }), completion((cql.RowsResultMessage res) {
         expect(res.rows.length, equals(1));
@@ -268,10 +268,10 @@ main({bool enableLogger: true}) {
                     "An error occurred while invoking '${cql.Compression.SNAPPY}' codec (compression)"));
           }
 
-          conn
+          conn!
               .open()
               .then((_) =>
-                  conn.execute(new cql.Query("SELECT * from test.type_test")))
+                  conn!.execute(new cql.Query("SELECT * from test.type_test")))
               .catchError(expectAsync(handleError));
         });
 
@@ -293,10 +293,10 @@ main({bool enableLogger: true}) {
                 equals("Server responded with an unexpected compressed frame"));
           }
 
-          conn
+          conn!
               .open()
               .then((_) =>
-                  conn.execute(new cql.Query("SELECT * from test.type_test")))
+                  conn!.execute(new cql.Query("SELECT * from test.type_test")))
               .catchError(expectAsync(handleError));
         });
 
@@ -315,8 +315,8 @@ main({bool enableLogger: true}) {
               config: config);
 
           expect(
-              conn.open().then((_) {
-                return conn
+              conn!.open().then((_) {
+                return conn!
                     .execute(new cql.Query("SELECT * from test.type_test"));
               }), completion((cql.ResultMessage res) {
             return res is cql.VoidResultMessage;
@@ -350,8 +350,8 @@ main({bool enableLogger: true}) {
               config: config);
 
           expect(
-              conn.open().then((_) {
-                return conn
+              conn!.open().then((_) {
+                return conn!
                     .execute(new cql.Query("SELECT * from test.type_test"));
               }), completion((cql.ResultMessage res) {
             return res is cql.VoidResultMessage;
@@ -383,10 +383,10 @@ main({bool enableLogger: true}) {
                     "An error occurred while invoking '${cql.Compression.SNAPPY}' codec (decompression)"));
           }
 
-          conn
+          conn!
               .open()
               .then((_) =>
-                  conn.execute(new cql.Query("SELECT * from test.type_test")))
+                  conn!.execute(new cql.Query("SELECT * from test.type_test")))
               .catchError(expectAsync(handleError));
         });
 

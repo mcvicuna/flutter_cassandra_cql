@@ -9,7 +9,7 @@ main({bool enableLogger: true}) {
     test("invalid protocol", () {
       expect(
           () => new cql.PoolConfiguration(protocolVersion: null),
-          throwsA(predicate((ex) =>
+          throwsA(predicate((dynamic ex) =>
               ex is ArgumentError &&
               ex.message == "Driver only supports protocol versions 2 and 3")));
     });
@@ -19,7 +19,7 @@ main({bool enableLogger: true}) {
           () => new cql.PoolConfiguration(
               protocolVersion: cql.ProtocolVersion.V2,
               streamsPerConnection: 1024),
-          throwsA(predicate((ex) =>
+          throwsA(predicate((dynamic ex) =>
               ex is ArgumentError &&
               ex.message ==
                   "Invalid value for option 'streamsPerConnection'. Expected a value between 1 and 128 when using V2 prototcol")));
@@ -30,7 +30,7 @@ main({bool enableLogger: true}) {
           () => new cql.PoolConfiguration(
               protocolVersion: cql.ProtocolVersion.V3,
               streamsPerConnection: 65536),
-          throwsA(predicate((ex) =>
+          throwsA(predicate((dynamic ex) =>
               ex is ArgumentError &&
               ex.message ==
                   "Invalid value for option 'streamsPerConnection'. Expected a value between 1 and 3768 when using V3 prototcol")));

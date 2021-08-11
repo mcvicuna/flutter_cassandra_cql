@@ -1,16 +1,16 @@
 part of dart_cassandra_cql.protocol;
 
 class BatchMessage extends Message implements RequestMessage {
-  BatchType type;
-  Consistency consistency;
-  Consistency serialConsistency;
-  List<Query> queryList;
+  late BatchType type;
+  late Consistency consistency;
+  Consistency? serialConsistency;
+  late List<Query> queryList;
 
   BatchMessage() : super(Opcode.BATCH);
 
-  void write(TypeEncoder encoder) {
+  void write(TypeEncoder? encoder) {
     // Write batch type and number of queries
-    encoder.writeUint8(type.value);
+    encoder!.writeUint8(type.value);
 
     // V3 includes a flags byte
     if (encoder.protocolVersion == ProtocolVersion.V3) {
@@ -36,7 +36,7 @@ class BatchMessage extends Message implements RequestMessage {
 
     // V3 includes serial_consistency
     if (serialConsistency != null) {
-      encoder.writeUInt16(serialConsistency.value);
+      encoder.writeUInt16(serialConsistency!.value);
     }
   }
 }

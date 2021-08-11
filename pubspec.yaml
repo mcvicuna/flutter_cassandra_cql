@@ -1,11 +1,13 @@
-name: dart_cassandra_cql
+name: flutter_cassandra_cql
 version: 0.2.1
 author: Achilleas Anagnostopoulos
 description: Dart driver for apache Cassandra
 homepage: https://github.com/achilleasa/dart_cassandra_cql
 environment:
-    sdk: '>=2.0.0 <3.0.0'
+    sdk: '>=2.12.0 <3.0.0'
 dependencies:
+  flutter:
+    sdk: flutter
   uuid: any
   collection: any
   logging: any

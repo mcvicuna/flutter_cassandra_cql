@@ -14,63 +14,63 @@ class TypeEncoder {
   // Cassandra spec specifies NULL as the short int value -1
   static const int CASSANDRA_NULL = -1;
 
-  ChunkedOutputWriter _writer;
+  ChunkedOutputWriter? _writer;
 
   Endian endianess = Endian.big;
 
   ProtocolVersion protocolVersion;
 
   TypeEncoder(ProtocolVersion this.protocolVersion,
-      {ChunkedOutputWriter withWriter: null}) {
+      {ChunkedOutputWriter? withWriter: null}) {
     _writer = withWriter == null ? ChunkedOutputWriter() : withWriter;
   }
 
   void writeUint8(int value) {
     Uint8List buf = Uint8List(1);
     ByteData.view(buf.buffer).setUint8(0, value);
-    _writer.addLast(buf);
+    _writer!.addLast(buf);
   }
 
   void writeUInt16(int value) {
     Uint8List buf = Uint8List(2);
     ByteData.view(buf.buffer).setUint16(0, value, endianess);
-    _writer.addLast(buf);
+    _writer!.addLast(buf);
   }
 
   void writeInt16(int value) {
     Uint8List buf = Uint8List(2);
     ByteData.view(buf.buffer).setInt16(0, value, endianess);
-    _writer.addLast(buf);
+    _writer!.addLast(buf);
   }
 
   void writeUInt32(int value) {
     Uint8List buf = Uint8List(4);
     ByteData.view(buf.buffer).setUint32(0, value, endianess);
-    _writer.addLast(buf);
+    _writer!.addLast(buf);
   }
 
   void writeInt32(int value) {
     Uint8List buf = Uint8List(4);
     ByteData.view(buf.buffer).setInt32(0, value, endianess);
-    _writer.addLast(buf);
+    _writer!.addLast(buf);
   }
 
   void writeUInt64(int value) {
     Uint8List buf = Uint8List(8);
     ByteData.view(buf.buffer).setUint64(0, value, endianess);
-    _writer.addLast(buf);
+    _writer!.addLast(buf);
   }
 
   writeFloat(double value) {
     Uint8List buf = Uint8List(4);
     ByteData.view(buf.buffer).setFloat32(0, value, endianess);
-    _writer.addLast(buf);
+    _writer!.addLast(buf);
   }
 
   writeDouble(double value) {
     Uint8List buf = Uint8List(8);
     ByteData.view(buf.buffer).setFloat64(0, value, endianess);
-    _writer.addLast(buf);
+    _writer!.addLast(buf);
   }
 
   void writeLength(int len, SizeType size) {
@@ -89,7 +89,7 @@ class TypeEncoder {
     }
   }
 
-  void writeBytes(Uint8List value, SizeType size) {
+  void writeBytes(Uint8List? value, SizeType size) {
     if (value == null) {
       writeNull(size);
       return;
@@ -97,10 +97,10 @@ class TypeEncoder {
 
     // Write the length followed by the actual bytes
     writeLength(value.length, size);
-    _writer.addLast(value);
+    _writer!.addLast(value);
   }
 
-  void writeString(String value, SizeType size) {
+  void writeString(String? value, SizeType size) {
     if (value == null) {
       writeNull(size);
       return;
@@ -111,10 +111,10 @@ class TypeEncoder {
 
     // Write the length followed by the actual bytes
     writeLength(bytes.length, size);
-    _writer.addLast(bytes);
+    _writer!.addLast(bytes as Uint8List?);
   }
 
-  void writeStringList(List value, SizeType size) {
+  void writeStringList(List? value, SizeType size) {
     if (value == null) {
       writeNull(size);
       return;
@@ -122,12 +122,12 @@ class TypeEncoder {
 
     // Write the length followed by a string for each K,V
     writeLength(value.length, size);
-    value.forEach((Object v) {
+    value.forEach((v) {
       writeString(v.toString(), size);
     });
   }
 
-  void writeStringMap(Map<String, String> value, SizeType size) {
+  void writeStringMap(Map<String, String?> value, SizeType size) {
     if (value == null) {
       writeNull(size);
       return;
@@ -135,7 +135,7 @@ class TypeEncoder {
 
     // Write the length followed by a string for each K,V
     writeLength(value.length, size);
-    value.forEach((String k, String v) {
+    value.forEach((String k, String? v) {
       writeString(k, size);
       writeString(v, size);
     });
@@ -165,7 +165,7 @@ class TypeEncoder {
 
     // Write the length followed by the actual bytes
     writeLength(value.length, size);
-    _writer.addLast(bytes);
+    _writer!.addLast(bytes);
   }
 
   void _writeUUID(Uuid uuid, SizeType size) {
@@ -210,11 +210,11 @@ class TypeEncoder {
     writeBytes(Uint8List.fromList(bytes.reversed.toList()), size);
   }
 
-  void writeTypedValue(String name, Object value,
-      {TypeSpec typeSpec: null,
-      DataType forceType: null,
+  void writeTypedValue(String? name, Object? value,
+      {TypeSpec? typeSpec: null,
+      DataType? forceType: null,
       SizeType size: SizeType.LONG}) {
-    DataType valueType = typeSpec != null ? typeSpec.valueType : forceType;
+    DataType? valueType = typeSpec != null ? typeSpec.valueType : forceType;
     //_logger.fine("[TypeEncoder::writeTypedValue] Attempting to write ${DataType.nameOf(valueType)} @ 0x${(encoder.writer.lengthInBytes + (encoder.protocolVersion == ProtocolVersion.V2 ? Header.SIZE_IN_BYTES_V2 : Header.SIZE_IN_BYTES_V3)).toRadixString(16)}");
 
     if (value == null) {
@@ -224,11 +224,11 @@ class TypeEncoder {
 
     switch (valueType) {
       case DataType.ASCII:
-        _writeAsciiString(value, size);
+        _writeAsciiString(value as String, size);
         break;
       case DataType.TEXT:
       case DataType.VARCHAR:
-        writeString(value, size);
+        writeString(value as String?, size);
         break;
       case DataType.UUID:
       case DataType.TIMEUUID:
@@ -244,7 +244,7 @@ class TypeEncoder {
         if (value is Uint8List) {
           writeBytes(value, size);
         } else if (value is CustomType) {
-          Codec<Object, Uint8List> codec = getCodec(value.customTypeClass);
+          Codec<Object, Uint8List?>? codec = getCodec(value.customTypeClass);
           if (codec != null) {
             writeBytes(codec.encode(value), size);
           } else {
@@ -261,16 +261,16 @@ class TypeEncoder {
           throw ArgumentError(
               "Expected value for field '${name}' of type ${DataType.nameOf(valueType)} to be an instance of Uint8List");
         }
-        writeBytes(value as Uint8List, size);
+        writeBytes(value, size);
         break;
       case DataType.INT:
         writeLength(4, size);
-        writeInt32(value);
+        writeInt32(value as int);
         break;
       case DataType.BIGINT:
       case DataType.COUNTER:
         writeLength(8, size);
-        writeUInt64(value);
+        writeUInt64(value as int);
         break;
       case DataType.TIMESTAMP:
         if (value is! DateTime) {
@@ -278,7 +278,7 @@ class TypeEncoder {
               "Expected value for field '${name}' of type ${DataType.nameOf(valueType)} to be an instance of DateTime");
         }
         writeLength(8, size);
-        writeUInt64((value as DateTime).millisecondsSinceEpoch);
+        writeUInt64(value.millisecondsSinceEpoch);
         break;
       case DataType.BOOLEAN:
         writeLength(1, size);
@@ -286,18 +286,18 @@ class TypeEncoder {
         break;
       case DataType.FLOAT:
         writeLength(4, size);
-        writeFloat(value);
+        writeFloat(value as double);
         break;
       case DataType.DOUBLE:
         writeLength(8, size);
-        writeDouble(value);
+        writeDouble(value as double);
         break;
       case DataType.INET:
         if (value is! InternetAddress) {
           throw ArgumentError(
               "Expected value for field '${name}' of type ${DataType.nameOf(valueType)} to be an instance of InternetAddress");
         }
-        writeBytes((value as InternetAddress).rawAddress, size);
+        writeBytes(value.rawAddress, size);
         break;
       case DataType.LIST:
       case DataType.SET:
@@ -305,7 +305,7 @@ class TypeEncoder {
           throw ArgumentError(
               "Expected value for field '${name}' of type ${DataType.nameOf(valueType)} to implement Iterable");
         }
-        Iterable v = value as Iterable;
+        Iterable v = value;
 
         // Encode list length and items into a separate buffer, then write the buffer length and buffer data
         SizeType itemSize = protocolVersion == ProtocolVersion.V2
@@ -313,19 +313,20 @@ class TypeEncoder {
             : SizeType.LONG;
         TypeEncoder scopedEncoder = TypeEncoder(protocolVersion);
         scopedEncoder.writeLength(v.length, itemSize);
-        v.forEach((Object elem) => scopedEncoder.writeTypedValue(name, elem,
-            typeSpec: typeSpec.valueSubType, size: itemSize));
+        v.forEach(((Object elem) => scopedEncoder.writeTypedValue(name, elem,
+            typeSpec: typeSpec!.valueSubType,
+            size: itemSize)) as void Function(dynamic));
 
         // Write buffer size in bytes and the actual buffer data
-        writeLength(scopedEncoder.writer.lengthInBytes, size);
-        writer.addAll(scopedEncoder.writer.chunks);
+        writeLength(scopedEncoder.writer!.lengthInBytes, size);
+        writer!.addAll(scopedEncoder.writer!.chunks);
         break;
       case DataType.MAP:
         if (value is! Map) {
           throw ArgumentError(
               "Expected value for field '${name}' of type ${DataType.nameOf(valueType)} to implement Map");
         }
-        Map v = value as Map;
+        Map v = value;
 
         // Encode list items into a separate buffer, then write the buffer length and buffer data
         SizeType itemSize = protocolVersion == ProtocolVersion.V2
@@ -336,40 +337,40 @@ class TypeEncoder {
         v.forEach((Object key, Object val) {
           scopedEncoder
             ..writeTypedValue(name, key,
-                typeSpec: typeSpec.keySubType, size: itemSize)
+                typeSpec: typeSpec!.keySubType, size: itemSize)
             ..writeTypedValue(name, val,
                 typeSpec: typeSpec.valueSubType, size: itemSize);
-        });
+        } as void Function(dynamic, dynamic));
 
         // Write buffer size in bytes and the actual buffer data
-        writeLength(scopedEncoder.writer.lengthInBytes, size);
-        writer.addAll(scopedEncoder.writer.chunks);
+        writeLength(scopedEncoder.writer!.lengthInBytes, size);
+        writer!.addAll(scopedEncoder.writer!.chunks);
 
         break;
       case DataType.DECIMAL:
-        _writeDecimal(value, size);
+        _writeDecimal(value as num, size);
         break;
       case DataType.VARINT:
-        _writeVarInt(value, size);
+        _writeVarInt(value as int, size);
         break;
       case DataType.UDT:
         if (value is! Map) {
           throw ArgumentError(
               "Expected value for field '${name}' of type ${DataType.nameOf(valueType)} to implement Map");
         }
-        Map v = value as Map;
+        Map v = value;
 
         // Encode items into a separate buffer, then write the buffer length and buffer data
         SizeType itemSize = SizeType.LONG;
         TypeEncoder scopedEncoder = TypeEncoder(protocolVersion);
-        typeSpec.udtFields.forEach((String name, TypeSpec udtType) {
+        typeSpec!.udtFields.forEach((String? name, TypeSpec udtType) {
           scopedEncoder.writeTypedValue(name, v[name],
               typeSpec: udtType, size: itemSize);
         });
 
         // Write buffer size in bytes and the actual buffer data
-        writeLength(scopedEncoder.writer.lengthInBytes, size);
-        writer.addAll(scopedEncoder.writer.chunks);
+        writeLength(scopedEncoder.writer!.lengthInBytes, size);
+        writer!.addAll(scopedEncoder.writer!.chunks);
 
         break;
       case DataType.TUPLE:
@@ -378,19 +379,19 @@ class TypeEncoder {
               "Expected value for field '${name}' of type ${DataType.nameOf(valueType)} to be an instance of Tuple");
         }
 
-        Iterable v = (value as Tuple);
+        Iterable v = value;
 
         // Encode items into a separate buffer, then write the buffer length and buffer data
         SizeType itemSize = SizeType.LONG;
         TypeEncoder scopedEncoder = TypeEncoder(protocolVersion);
         for (int index = 0; index < v.length; index++) {
           scopedEncoder.writeTypedValue(name, v.elementAt(index),
-              typeSpec: typeSpec.tupleFields.elementAt(index), size: itemSize);
+              typeSpec: typeSpec!.tupleFields.elementAt(index), size: itemSize);
         }
 
         // Write buffer size in bytes and the actual buffer data
-        writeLength(scopedEncoder.writer.lengthInBytes, size);
-        writer.addAll(scopedEncoder.writer.chunks);
+        writeLength(scopedEncoder.writer!.lengthInBytes, size);
+        writer!.addAll(scopedEncoder.writer!.chunks);
         break;
       default:
         throw ArgumentError(
@@ -404,5 +405,5 @@ class TypeEncoder {
 //    _writer._bufferedChunks.forEach((List<int> chunk) => file.writeAsBytesSync(chunk, mode : FileMode.APPEND));
 //  }
 
-  ChunkedOutputWriter get writer => _writer;
+  ChunkedOutputWriter? get writer => _writer;
 }

@@ -37,7 +37,7 @@ class DataType extends Enum<int> {
   get isCollection => this == LIST || this == SET || this == MAP;
 
   static DataType valueOf(int value) {
-    DataType fromValue = value == CUSTOM._value
+    DataType? fromValue = value == CUSTOM._value
         ? CUSTOM
         : value == ASCII._value
             ? ASCII
@@ -90,8 +90,8 @@ class DataType extends Enum<int> {
     return fromValue;
   }
 
-  static String nameOf(DataType value) {
-    String name = value == CUSTOM
+  static String? nameOf(DataType? value) {
+    String? name = value == CUSTOM
         ? "CUSTOM"
         : value == ASCII
             ? "ASCII"
@@ -141,7 +141,7 @@ class DataType extends Enum<int> {
    * the guessed [DataType] or null if type cannot be guessed
    */
 
-  static DataType guessForValue(Object value) {
+  static DataType? guessForValue(Object value) {
     if (value is bool) {
       return BOOLEAN;
     } else if (value is BigInt) {

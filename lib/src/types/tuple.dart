@@ -5,6 +5,6 @@ part of dart_cassandra_cql.types;
  * so we can distinguish between tuples and iterables
  * during serialization
  */
-class Tuple extends _wrappers.DelegatingList<Object> {
-  Tuple.fromIterable(Iterable iterable) : super(iterable);
+class Tuple extends _wrappers.DelegatingList<Object?> {
+  Tuple.fromIterable(Iterable iterable) : super(iterable as List<Object>);
 }

@@ -3,7 +3,7 @@ part of dart_cassandra_cql.connection;
 abstract class ConnectionPool {
   static final int DEFAULT_PORT = 9042;
 
-  PoolConfiguration poolConfig;
+  PoolConfiguration? poolConfig;
   StreamController<EventMessage> _eventStreamController =
       StreamController<EventMessage>.broadcast();
 
@@ -31,7 +31,7 @@ abstract class ConnectionPool {
   /**
    * Get back an active [Connection] from the pool to the specified [host] and [port].
    */
-  Future<Connection> getConnectionToHost(String host, int port);
+  Future<Connection> getConnectionToHost(String? host, int? port);
 
   /**
    * Return a [Stream<EventMessage>] where the application can listen for the requested [eventTypes].

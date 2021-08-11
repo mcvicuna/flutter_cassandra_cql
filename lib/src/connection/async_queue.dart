@@ -1,9 +1,9 @@
 part of dart_cassandra_cql.connection;
 
 class AsyncQueue<T> {
-  Queue<T> _resources;
+  late Queue<T> _resources;
   Queue<Completer<T>> _reservations = Queue<Completer<T>>();
-  Duration reservationTimeout;
+  Duration? reservationTimeout;
 
   AsyncQueue.from(Iterable<T> resources) {
     _resources = Queue<T>.from(resources);
@@ -20,8 +20,8 @@ class AsyncQueue<T> {
     _dequeue();
 
     // Set reservation timeout if one is specified
-    if (reservationTimeout != null && reservationTimeout.inMilliseconds > 0) {
-      Timer(reservationTimeout, () {
+    if (reservationTimeout != null && reservationTimeout!.inMilliseconds > 0) {
+      Timer(reservationTimeout!, () {
         if (!reservation.isCompleted) {
           reservation.completeError(StreamReservationException(
               'Timed out waiting for stream reservation'));

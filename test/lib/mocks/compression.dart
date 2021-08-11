@@ -28,8 +28,8 @@ class MockCompressionCodec extends Codec<Uint8List, Uint8List> {
   bool throwOnDecode;
 
   // For our test apply ROT-13 to compress/decompress
-  RotConverter _encoder;
-  RotConverter _decoder;
+  late RotConverter _encoder;
+  late RotConverter _decoder;
 
   MockCompressionCodec(
       [this.throwOnEncode = false, this.throwOnDecode = false]) {

@@ -35,12 +35,12 @@ class PoolConfiguration {
    * To use this feature you need to register the appropriate compression [Codec]
    * by invoking [registerCodec]
    */
-  Compression compression;
+  Compression? compression;
 
   /**
    * An [Authenticator] instance for answering cassandra AUTH_CHALLENGE messages
    */
-  Authenticator authenticator;
+  Authenticator? authenticator;
 
   /**
    * Setting the [preferBiggerTcpPackets] option will join together
@@ -58,8 +58,8 @@ class PoolConfiguration {
       Duration this.reconnectWaitTime: const Duration(milliseconds: 1500),
       Duration this.streamReservationTimeout: const Duration(milliseconds: 0),
       bool this.autoDiscoverNodes: true,
-      Compression this.compression,
-      Authenticator this.authenticator,
+      Compression? this.compression,
+      Authenticator? this.authenticator,
       bool this.preferBiggerTcpPackets: false}) {
     validate();
   }
@@ -89,7 +89,7 @@ class PoolConfiguration {
     }
 
     // If a compression algorithm is specified make sure the appropriate codec is registered
-    if (compression != null && getCodec(compression.value) == null) {
+    if (compression != null && getCodec(compression!.value) == null) {
       throw ArgumentError(
           "A compression codec needs to be registered via registerCodec() for type '${compression}'");
     }

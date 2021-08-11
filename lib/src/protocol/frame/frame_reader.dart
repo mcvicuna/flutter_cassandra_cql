@@ -25,8 +25,8 @@ class FrameReader {
     try {
       TypeDecoder decoder =
           TypeDecoder.fromBuffer(frame.body, frame.getProtocolVersion());
-      Message message = null;
-      switch (frame.header.opcode) {
+      Message? message = null;
+      switch (frame.header!.opcode) {
         case Opcode.AUTHENTICATE:
           message = AuthenticateMessage.parse(decoder);
           break;
@@ -53,14 +53,14 @@ class FrameReader {
       }
 
       // Fill in stream id
-      message.streamId = frame.header.streamId;
+      message.streamId = frame.header!.streamId;
 
       // Emit parsed message to next stage
       sink.add(message);
     } catch (ex, trace) {
       // Emit an exception message
       ExceptionMessage message = ExceptionMessage(ex, trace);
-      message.streamId = frame.header.streamId;
+      message.streamId = frame.header!.streamId;
       sink.add(message);
     }
   }

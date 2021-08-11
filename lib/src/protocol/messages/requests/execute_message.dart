@@ -1,8 +1,8 @@
 part of dart_cassandra_cql.protocol;
 
 class ExecuteMessage extends QueryMessage implements RequestMessage {
-  Uint8List queryId;
-  Map<String, TypeSpec> bindingTypes;
+  Uint8List? queryId;
+  Map<String?, TypeSpec>? bindingTypes;
 
   ExecuteMessage() : super() {
     opcode = Opcode.EXECUTE;
@@ -19,10 +19,10 @@ class ExecuteMessage extends QueryMessage implements RequestMessage {
       Map<String, Object> bindingsMap = bindings as Map<String, Object>;
       encoder.writeUInt16(bindingsMap.length);
       bindingsMap.forEach((String arg, Object value) {
-        encoder.writeTypedValue(arg, value, typeSpec: bindingTypes[arg]);
+        encoder.writeTypedValue(arg, value, typeSpec: bindingTypes![arg]);
       });
     } else {
-      Iterable<TypeSpec> bindingTypeList = bindingTypes.values;
+      Iterable<TypeSpec> bindingTypeList = bindingTypes!.values;
       Iterable bindingsList = bindings as Iterable;
       encoder.writeUInt16(bindingsList.length);
 
@@ -30,13 +30,13 @@ class ExecuteMessage extends QueryMessage implements RequestMessage {
       bindingsList.forEach((Object value) {
         encoder.writeTypedValue("$arg", value,
             typeSpec: bindingTypeList.elementAt(arg++));
-      });
+      } as void Function(dynamic));
     }
   }
 
-  void write(TypeEncoder encoder) {
+  void write(TypeEncoder? encoder) {
     // Write queryId
-    encoder.writeBytes(queryId, SizeType.SHORT);
+    encoder!.writeBytes(queryId, SizeType.SHORT);
 
     // Write query params
     _writeQueryParameters(encoder);

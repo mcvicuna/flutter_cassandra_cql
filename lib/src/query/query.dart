@@ -3,11 +3,11 @@ part of dart_cassandra_cql.query;
 class Query extends QueryInterface {
   bool prepared;
   String _query;
-  String _positionalQuery;
-  Object _bindings;
-  List<String> _namedToPositionalBindings;
+  String? _positionalQuery;
+  Object? _bindings;
+  List<String>? _namedToPositionalBindings;
   Consistency consistency;
-  Consistency serialConsistency;
+  Consistency? serialConsistency;
   static final List<String> _byteToChar = [
     "0",
     "1",
@@ -28,9 +28,9 @@ class Query extends QueryInterface {
   ];
 
   Query(String this._query,
-      {Object bindings: null,
+      {Object? bindings: null,
       Consistency this.consistency: Consistency.QUORUM,
-      Consistency this.serialConsistency,
+      Consistency? this.serialConsistency,
       bool this.prepared: false}) {
     this.bindings = bindings;
   }
@@ -55,19 +55,18 @@ class Query extends QueryInterface {
 
   String get query => _query;
 
-  String get positionalQuery {
+  String? get positionalQuery {
     // Already converted
     if (_positionalQuery != null) {
       return _positionalQuery;
     }
 
-    _namedToPositionalBindings = List<String>();
+    _namedToPositionalBindings = [];
     StringBuffer buffer = StringBuffer();
     int blockStart = 0;
     int offset = 0;
     bool insideLiteral = false;
-    RegExp placeholderRegex =
-        RegExp(":[a-zA-Z0-9_]+", caseSensitive: false);
+    RegExp placeholderRegex = RegExp(":[a-zA-Z0-9_]+", caseSensitive: false);
     for (; offset < _query.length; offset++) {
       if (_query[offset] == "'") {
         insideLiteral = !insideLiteral;
@@ -82,16 +81,17 @@ class Query extends QueryInterface {
         }
 
         // Capture placeholder name
-        Match placeholderMatch = placeholderRegex.matchAsPrefix(_query, offset);
+        Match? placeholderMatch =
+            placeholderRegex.matchAsPrefix(_query, offset);
         if (placeholderMatch == null) {
           throw ArgumentError(
               "Expected named placeholder to begin at offset $offset");
         }
-        String name = placeholderMatch.group(0).substring(1);
+        String name = placeholderMatch.group(0)!.substring(1);
 
         // Replace named binding with positional placeholder
         buffer.write('?');
-        _namedToPositionalBindings.add(name);
+        _namedToPositionalBindings!.add(name);
 
         // Begin capturing a new block after the placeholder name
         offset += name.length;
@@ -108,19 +108,19 @@ class Query extends QueryInterface {
     return _positionalQuery;
   }
 
-  Object get bindings => _bindings;
+  Object? get bindings => _bindings;
 
-  set bindings(Object value) {
+  set bindings(Object? value) {
     if (value != null && (value is! Iterable) && (value is! Map)) {
       throw ArgumentError("Bindings should be either an Iterable or a Map");
     }
     this._bindings = value;
   }
 
-  List<Object> get namedToPositionalBindings {
+  List<Object?>? get namedToPositionalBindings {
     // Query specifies positional bindings
     if (_bindings is List) {
-      return _bindings;
+      return _bindings as List<Object?>?;
     }
 
     if (_namedToPositionalBindings == null || _bindings == null) {
@@ -128,19 +128,18 @@ class Query extends QueryInterface {
     }
 
     // Map named bindings to positional
-    Map bindingsMap = _bindings as Map;
-    return List.generate(_namedToPositionalBindings.length, (argIndex) {
-      String name = _namedToPositionalBindings[argIndex];
-      if (!bindingsMap.containsKey(name)) {
-        throw ArgumentError(
-            "Missing binding for named placeholder '$name'");
+    Map? bindingsMap = _bindings as Map?;
+    return List.generate(_namedToPositionalBindings!.length, (argIndex) {
+      String name = _namedToPositionalBindings![argIndex];
+      if (!bindingsMap!.containsKey(name)) {
+        throw ArgumentError("Missing binding for named placeholder '$name'");
       }
       return bindingsMap[name];
     });
   }
 
   void _expandPositionalPlaceholders(StringBuffer buffer) {
-    List<Object> bindingList = _bindings as Iterable;
+    List<Object>? bindingList = (_bindings as Iterable?) as List<Object>?;
     int bindingIndex = 0;
     int blockStart = 0;
     int offset = 0;
@@ -158,7 +157,7 @@ class Query extends QueryInterface {
           buffer.write(_query.substring(blockStart, offset));
         }
 
-        if (bindingList.length <= bindingIndex) {
+        if (bindingList!.length <= bindingIndex) {
           throw ArgumentError(
               "Missing argument '${bindingIndex}' from bindings list");
         }
@@ -177,12 +176,12 @@ class Query extends QueryInterface {
   }
 
   void _expandNamedPlaceholders(StringBuffer buffer) {
-    Map<String, Object> bindingMap = _bindings as Map;
+    Map<String, Object>? bindingMap =
+        (_bindings as Map?) as Map<String, Object>?;
     int blockStart = 0;
     int offset = 0;
     bool insideLiteral = false;
-    RegExp placeholderRegex =
-        RegExp(":[a-zA-Z0-9_]+", caseSensitive: false);
+    RegExp placeholderRegex = RegExp(":[a-zA-Z0-9_]+", caseSensitive: false);
     for (; offset < _query.length; offset++) {
       if (_query[offset] == "'") {
         insideLiteral = !insideLiteral;
@@ -197,15 +196,15 @@ class Query extends QueryInterface {
         }
 
         // Capture placeholder name
-        Match placeholderMatch = placeholderRegex.matchAsPrefix(_query, offset);
+        Match? placeholderMatch =
+            placeholderRegex.matchAsPrefix(_query, offset);
         if (placeholderMatch == null) {
           throw ArgumentError(
               "Expected named placeholder to begin at offset $offset");
         }
-        String name = placeholderMatch.group(0).substring(1);
-        if (!bindingMap.containsKey(name)) {
-          throw ArgumentError(
-              "Missing binding for named placeholder '$name'");
+        String name = placeholderMatch.group(0)!.substring(1);
+        if (!bindingMap!.containsKey(name)) {
+          throw ArgumentError("Missing binding for named placeholder '$name'");
         }
 
         // Stringify binding value
@@ -233,7 +232,7 @@ class Query extends QueryInterface {
     return buffer;
   }
 
-  Object _typeToString(Object value, {quoteStrings: true}) {
+  Object? _typeToString(Object? value, {quoteStrings: true}) {
     if (value == null) {
       return "null";
     } else if (value is String) {
@@ -254,14 +253,14 @@ class Query extends QueryInterface {
         return "null";
       }
 
-      Codec<Object, Uint8List> codec = getCodec(value.customTypeClass);
+      Codec<Object, Uint8List?>? codec = getCodec(value.customTypeClass);
       if (codec == null) {
         throw ArgumentError(
             "No custom type codec specified for type with class: ${value.customTypeClass}");
       }
 
       StringBuffer buffer = StringBuffer();
-      codec.encode(value).forEach(buffer.writeCharCode);
+      codec.encode(value)!.forEach(buffer.writeCharCode);
 
       return StringBuffer()
         ..write(r"'")
@@ -294,7 +293,7 @@ class Query extends QueryInterface {
       Map map = LinkedHashMap();
       value.forEach((Object k, Object v) {
         map[_typeToString(k)] = _typeToString(v);
-      });
+      } as void Function(dynamic, dynamic));
       return map;
     } else {
       return value.toString();

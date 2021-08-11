@@ -2,22 +2,22 @@ part of dart_cassandra_cql.types;
 
 class TypeSpec {
   DataType valueType;
-  TypeSpec keySubType;
-  TypeSpec valueSubType;
+  TypeSpec? keySubType;
+  TypeSpec? valueSubType;
 
   // Custom type
-  String customTypeClass;
+  String? customTypeClass;
 
   // V3 protocol: UDT
-  String keyspace;
-  String udtName;
-  Map<String, TypeSpec> udtFields;
+  String? keyspace;
+  String? udtName;
+  late Map<String?, TypeSpec> udtFields;
 
   // V3 protocol: TUPLE
-  List<TypeSpec> tupleFields;
+  late List<TypeSpec> tupleFields;
 
   TypeSpec(DataType this.valueType,
-      {TypeSpec this.keySubType, TypeSpec this.valueSubType}) {
+      {TypeSpec? this.keySubType, TypeSpec? this.valueSubType}) {
     if (valueType == DataType.LIST &&
         (valueSubType == null || valueSubType is! TypeSpec)) {
       throw ArgumentError(
@@ -34,9 +34,9 @@ class TypeSpec {
       throw ArgumentError(
           "MAP type should specify TypeSpec instances for both its keys and values");
     } else if (valueType == DataType.UDT) {
-      udtFields = LinkedHashMap<String, TypeSpec>();
+      udtFields = LinkedHashMap<String?, TypeSpec>();
     } else if (valueType == DataType.TUPLE) {
-      tupleFields = List<TypeSpec>();
+      tupleFields = [];
     }
   }
 
@@ -58,7 +58,7 @@ class TypeSpec {
       case DataType.TUPLE:
         return "(${tupleFields})";
       default:
-        return DataType.nameOf(valueType);
+        return DataType.nameOf(valueType)!;
     }
   }
 }

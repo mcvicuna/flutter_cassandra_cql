@@ -2,11 +2,11 @@ part of dart_cassandra_cql.protocol;
 
 class FrameWriter {
   bool preferBiggerTcpPackets;
-  TypeEncoder _typeEncoder;
+  TypeEncoder? _typeEncoder;
   FrameHeader _header = FrameHeader();
 
   FrameWriter(int streamId, ProtocolVersion protocolVersion,
-      {TypeEncoder withEncoder: null,
+      {TypeEncoder? withEncoder: null,
       bool this.preferBiggerTcpPackets: false}) {
     _header
       ..version = protocolVersion == ProtocolVersion.V2
@@ -23,8 +23,8 @@ class FrameWriter {
     return _header.streamId;
   }
 
-  void writeMessage(RequestMessage message, Sink targetSink,
-      {Compression compression}) {
+  void writeMessage(RequestMessage message, Sink? targetSink,
+      {Compression? compression}) {
     // Buffer message so we can measure its length
     message.write(_typeEncoder);
 
@@ -32,7 +32,7 @@ class FrameWriter {
     // According to the spec, compression does not apply to the initial STARTUP message
     _header.flags = 0;
     if (compression != null && message.opcode != Opcode.STARTUP) {
-      Codec<Object, Uint8List> compressionCodec = getCodec(compression.value);
+      Codec<Object, Uint8List?>? compressionCodec = getCodec(compression.value);
       if (compressionCodec == null) {
         throw DriverException(
             "A compression codec needs to be registered via registerCodec() for type '${compression}'");
@@ -40,10 +40,10 @@ class FrameWriter {
 
       // Concatenate all writer blocks into a single chunk and then pass it through the compression codec
       // Catch and wrap any codec exceptions
-      Uint8List compressedData;
+      Uint8List? compressedData;
       try {
         compressedData =
-            compressionCodec.encode(_typeEncoder.writer.joinChunks());
+            compressionCodec.encode(_typeEncoder!.writer!.joinChunks());
       } catch (e, trace) {
         throw DriverException(
             "An error occurred while invoking '${compression}' codec (compression): ${e}",
@@ -52,20 +52,20 @@ class FrameWriter {
 
       // Replace writer blocks with compressed output and enable the compression flag for the header
       _header.flags |= HeaderFlag.COMPRESSION.value;
-      _typeEncoder.writer.clear();
-      _typeEncoder.writer.addLast(compressedData);
+      _typeEncoder!.writer!.clear();
+      _typeEncoder!.writer!.addLast(compressedData);
     }
 
     // Check for max payload size
-    if (_typeEncoder.writer.lengthInBytes > FrameHeader.MAX_LENGTH_IN_BYTES) {
-      _typeEncoder.writer.clear();
+    if (_typeEncoder!.writer!.lengthInBytes > FrameHeader.MAX_LENGTH_IN_BYTES) {
+      _typeEncoder!.writer!.clear();
       throw DriverException(
-          "Frame size cannot be larger than ${FrameHeader.MAX_LENGTH_IN_BYTES} bytes. Attempted to write ${_typeEncoder.writer.lengthInBytes} bytes");
+          "Frame size cannot be larger than ${FrameHeader.MAX_LENGTH_IN_BYTES} bytes. Attempted to write ${_typeEncoder!.writer!.lengthInBytes} bytes");
     }
 
     // Allocate header buffer
     Uint8List buf = Uint8List(
-        _typeEncoder.protocolVersion == ProtocolVersion.V2
+        _typeEncoder!.protocolVersion == ProtocolVersion.V2
             ? FrameHeader.SIZE_IN_BYTES_V2
             : FrameHeader.SIZE_IN_BYTES_V3);
     ByteData headerBytes = ByteData.view(buf.buffer);
@@ -73,11 +73,11 @@ class FrameWriter {
     // Encode header
     int offset = 0;
     headerBytes
-      ..setUint8(offset++, _header.version.value)
+      ..setUint8(offset++, _header.version!.value)
       ..setUint8(offset++, _header.flags);
 
     // Encode stream id (V2 uses a byte, V3 uses a short)
-    if (_typeEncoder.protocolVersion == ProtocolVersion.V2) {
+    if (_typeEncoder!.protocolVersion == ProtocolVersion.V2) {
       headerBytes.setInt8(offset++, _header.streamId);
     } else {
       headerBytes.setInt16(offset, _header.streamId);
@@ -87,16 +87,16 @@ class FrameWriter {
     // Encode remaining frame data
     headerBytes
       ..setUint8(offset++, message.opcode.value)
-      ..setUint32(offset++, _typeEncoder.writer.lengthInBytes);
+      ..setUint32(offset++, _typeEncoder!.writer!.lengthInBytes);
 
     // Prepend the header to the writer buffer queue
-    _typeEncoder.writer.addFirst(buf);
+    _typeEncoder!.writer!.addFirst(buf);
 
     // Dump
     //_typeEncoder.dumpToFile("frame-out.dump");
 
     // Pipe everything to the sink
-    _typeEncoder.writer
+    _typeEncoder!.writer!
         .pipe(targetSink, preferBiggerTcpPackets: preferBiggerTcpPackets);
   }
 }

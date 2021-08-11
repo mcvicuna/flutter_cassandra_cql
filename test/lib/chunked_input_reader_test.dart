@@ -34,9 +34,9 @@ main({bool enableLogger: true}) {
       reader.add([1, 2, 3]);
       reader.add([4]);
 
-      List<int> buffer = new List<int>(3);
+      List<int?> buffer = new List<int?>.filled(3, 0);
       expect(reader.length, equals(4));
-      reader.read(buffer, 3);
+      reader.read(buffer as List<int>, 3);
       expect(reader.length, equals(1));
       expect(buffer, equals([1, 2, 3]));
 
@@ -57,8 +57,8 @@ main({bool enableLogger: true}) {
       reader.skip(2);
       expect(reader.length, equals(2));
 
-      List<int> buffer = new List<int>(2);
-      reader.read(buffer, 2);
+      List<int?> buffer = new List<int?>.filled(2, 0);
+      reader.read(buffer as List<int>, 2);
       expect(reader.length, equals(0));
       expect(buffer, equals([4, 5]));
     });

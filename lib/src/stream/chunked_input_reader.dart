@@ -28,7 +28,7 @@ class ChunkedInputReader {
    * Returns the [int] value of the next byte or null if no data is available
    */
 
-  int peekNextByte() {
+  int? peekNextByte() {
     // No data available
     if (_bufferedChunks.isEmpty || length < 1) {
       return null;
@@ -43,7 +43,7 @@ class ChunkedInputReader {
    * and will return the total number of bytes written
    */
 
-  int read(List<int> destination, int count, [int offset = 0]) {
+  int read(List<int>? destination, int count, [int offset = 0]) {
     int writeOffset = offset;
     while (count > 0) {
       // If we ran out of buffers we are done
@@ -59,14 +59,14 @@ class ChunkedInputReader {
 
       // If the remaining head buffer can fill the destination entirely, copy it and de-queue head
       if (remainingHeadBytes <= count) {
-        destination.setRange(writeOffset, writeOffset + remainingHeadBytes,
+        destination!.setRange(writeOffset, writeOffset + remainingHeadBytes,
             _bufferedChunks.removeFirst(), _usedHeadBytes);
         _usedHeadBytes = 0;
         count -= remainingHeadBytes;
         writeOffset += remainingHeadBytes;
       } else {
         // Copy as much as we can skipping any already dequeued bytes
-        destination.setRange(writeOffset, writeOffset + count,
+        destination!.setRange(writeOffset, writeOffset + count,
             _bufferedChunks.first, _usedHeadBytes);
         _usedHeadBytes += count;
         writeOffset += count;

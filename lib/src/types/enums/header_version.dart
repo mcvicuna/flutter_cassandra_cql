@@ -11,7 +11,7 @@ class HeaderVersion extends Enum<int> {
   String toString() => "0x${value.toRadixString(16)}";
 
   static HeaderVersion valueOf(int value) {
-    HeaderVersion fromValue = value == REQUEST_V2._value
+    HeaderVersion? fromValue = value == REQUEST_V2._value
         ? REQUEST_V2
         : value == RESPONSE_V2._value
             ? RESPONSE_V2

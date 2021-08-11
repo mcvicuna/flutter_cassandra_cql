@@ -2,11 +2,11 @@ part of dart_cassandra_cql.connection;
 
 class Connection {
   // Configuration options
-  PoolConfiguration _poolConfig;
-  String defaultKeyspace;
+  late PoolConfiguration _poolConfig;
+  String? defaultKeyspace;
   String connId;
   String host;
-  int port;
+  int? port;
 
   // Flag indicating whether the connected host is healthy or not
   bool healthy = false;
@@ -15,21 +15,21 @@ class Connection {
   bool inService = false;
 
   // The connection to the server
-  Socket _socket;
-  int _connectionAttempt;
+  Socket? _socket;
+  late int _connectionAttempt;
 
   // A pool of frame writers for each multiplexed stream
-  AsyncQueue<FrameWriter> _frameWriterPool;
-  Map<int, FrameWriter> _reservedFrameWriters = Map<int, FrameWriter>();
+  AsyncQueue<FrameWriter?>? _frameWriterPool;
+  Map<int, FrameWriter?> _reservedFrameWriters = Map<int, FrameWriter?>();
 
   // Tracked futures/streams
-  Map<int, Completer<Message>> _pendingResponses;
-  Completer _connected;
-  Completer _drained;
-  Future _socketFlushed;
+  late Map<int, Completer<Message>> _pendingResponses;
+  Completer? _connected;
+  Completer? _drained;
+  late Future _socketFlushed;
 
-  Connection(String this.connId, String this.host, int this.port,
-      {PoolConfiguration config, String this.defaultKeyspace}) {
+  Connection(String this.connId, String this.host, int? this.port,
+      {PoolConfiguration? config, String? this.defaultKeyspace}) {
     // If no config is specified, use the default one
     _poolConfig = config == null ? PoolConfiguration() : config;
 
@@ -37,7 +37,7 @@ class Connection {
     _pendingResponses = Map<int, Completer<Message>>();
   }
 
-  StreamController _eventController;
+  StreamController? _eventController;
 
   /**
    * Abort any pending requests with [reason] as the error and clean up.
@@ -60,7 +60,7 @@ class Connection {
     _connected = null;
 
     // Kill socket
-    Future socketClosed = _socket != null ? _socket.close() : Future.value();
+    Future socketClosed = _socket != null ? _socket!.close() : Future.value();
     _socket = null;
 
     return socketClosed;
@@ -79,20 +79,22 @@ class Connection {
 
     connectionLogger.info(
         "[${connId}] Trying to connect to ${host}:${port} [attempt ${_connectionAttempt + 1}/${_poolConfig.maxConnectionAttempts}]");
-    Socket.connect(host, port).then((Socket s) {
+    Socket.connect(host, port!).then((Socket s) {
       _socket = s;
       _socketFlushed = Future.value(true);
 
       // Initialize our writer pool and set the reservation timeout
       _reservedFrameWriters.clear();
-      _frameWriterPool = AsyncQueue<FrameWriter>.from(List<FrameWriter>.generate(
-          _poolConfig.streamsPerConnection,
-          (int id) => FrameWriter(id, _poolConfig.protocolVersion,
-              preferBiggerTcpPackets: _poolConfig.preferBiggerTcpPackets)));
-      _frameWriterPool.reservationTimeout = _poolConfig.streamReservationTimeout;
+      _frameWriterPool = AsyncQueue<FrameWriter?>.from(
+          List<FrameWriter>.generate(
+              _poolConfig.streamsPerConnection,
+              (int id) => FrameWriter(id, _poolConfig.protocolVersion,
+                  preferBiggerTcpPackets: _poolConfig.preferBiggerTcpPackets)));
+      _frameWriterPool!.reservationTimeout =
+          _poolConfig.streamReservationTimeout;
 
       // Bind processors and initiate handshake
-      _socket
+      _socket!
           .transform(FrameParser().transformer)
           .transform(FrameDecompressor(_poolConfig.compression).transformer)
           .transform(FrameReader().transformer)
@@ -103,11 +105,12 @@ class Connection {
               onError: (_) {}, onDone: () {
         connectionLogger.severe("[${connId}] Server has closed the connection");
         if (_socket != null) {
-          _socket.destroy();
+          _socket!.destroy();
           _socket = null;
         }
 
-        _abortRequestsAndCleanup(ConnectionLostException("Server closed the connection"));
+        _abortRequestsAndCleanup(
+            ConnectionLostException("Server closed the connection"));
       });
 
       // Handshake with the server
@@ -117,7 +120,8 @@ class Connection {
         String errorMessage =
             "[${connId}] Could not connect to ${host}:${port} after ${_poolConfig.maxConnectionAttempts} attempts. Giving up";
         connectionLogger.severe(errorMessage);
-        _connected.completeError(ConnectionFailedException(errorMessage, trace));
+        _connected!
+            .completeError(ConnectionFailedException(errorMessage, trace));
 
         // Clear _connected future so the client can invoke open() in the future
         _connected = null;
@@ -127,7 +131,7 @@ class Connection {
       }
     });
 
-    return _connected.future;
+    return _connected!.future;
   }
 
   Future<ResultMessage> _authenticate(AuthenticateMessage authMessage) {
@@ -135,9 +139,10 @@ class Connection {
     if (_poolConfig.authenticator == null) {
       throw AuthenticationException(
           "Server requested '${authMessage.authenticatorClass}' authenticator but no authenticator specified");
-    } else if (authMessage.authenticatorClass != _poolConfig.authenticator.authenticatorClass) {
+    } else if (authMessage.authenticatorClass !=
+        _poolConfig.authenticator!.authenticatorClass) {
       throw AuthenticationException(
-          "Server requested '${authMessage.authenticatorClass}' authenticator but a '${_poolConfig.authenticator.authenticatorClass}' authenticator was specified instead");
+          "Server requested '${authMessage.authenticatorClass}' authenticator but a '${_poolConfig.authenticator!.authenticatorClass}' authenticator was specified instead");
     }
 
     // Run through challenge response till we get back a ready message from the server
@@ -146,12 +151,17 @@ class Connection {
     void answerChallenge(Message result) {
       if (result is AuthenticateMessage || result is AuthChallengeMessage) {
         AuthResponseMessage response = AuthResponseMessage()
-          ..responsePayload = _poolConfig.authenticator.answerChallenge(result is AuthenticateMessage
-              ? result.challengePayload
-              : (result as AuthChallengeMessage).challengePayload);
+          ..responsePayload = _poolConfig.authenticator!.answerChallenge(
+              result is AuthenticateMessage
+                  ? result.challengePayload
+                  : (result as AuthChallengeMessage).challengePayload);
 
         _writeMessage(response).then(answerChallenge).catchError((e, trace) {
-          completer.completeError(e is CassandraException ? AuthenticationException(e.message, trace) : e, trace);
+          completer.completeError(
+              e is CassandraException
+                  ? AuthenticationException(e.message, trace)
+                  : e,
+              trace);
         });
       } else if (result is AuthSuccessMessage) {
         completer.complete(result);
@@ -160,7 +170,7 @@ class Connection {
 
     // Begin challenge-response round
     answerChallenge(authMessage);
-    return completer.future;
+    return completer.future.then((value) => value as ResultMessage);
   }
 
   /**
@@ -200,12 +210,12 @@ class Connection {
       healthy = true;
       inService = true;
       _drained = null;
-      _connected.complete();
+      _connected!.complete();
     }).catchError((e, trace) {
       healthy = false;
       inService = false;
       _drained = null;
-      _connected.completeError(e, trace);
+      _connected!.completeError(e, trace);
     });
   }
 
@@ -220,14 +230,16 @@ class Connection {
     // block till we get back a frame writer
     // We also assign returned future to _socketFlushed to avoid
     // race conditions on consecutive calls to _writeMessage.
-    _socketFlushed = _socketFlushed.then((_) => _frameWriterPool.reserve()).then((FrameWriter writer) {
-      _reservedFrameWriters[writer.getStreamId()] = writer;
+    _socketFlushed = _socketFlushed
+        .then((_) => _frameWriterPool!.reserve())
+        .then((FrameWriter? writer) {
+      _reservedFrameWriters[writer!.getStreamId()] = writer;
       _pendingResponses[writer.getStreamId()] = reply;
       connectionLogger.fine(
           "[${connId}] [stream #${writer.getStreamId()}] Sending message of type ${Opcode.nameOf(message.opcode)} (${message.opcode}) ${message}");
       writer.writeMessage(message, _socket,
           compression: _poolConfig.compression);
-      return _socket.flush();
+      return _socket!.flush();
     }).catchError((e, trace) {
       // Wrap SocketExceptions
       if (e is SocketException) {
@@ -249,7 +261,7 @@ class Connection {
         "[${connId}] [stream #${message.streamId}] Received message of type ${Opcode.nameOf(message.opcode)} (${message.opcode}) ${message}");
 
     // Fetch our response completer
-    final responseCompleter = _pendingResponses[message.streamId];
+    final responseCompleter = _pendingResponses[message.streamId!];
 
     // Release streamId back to the pool unless its -1 (server event message)
     if (message.streamId != -1) {
@@ -257,8 +269,8 @@ class Connection {
 
       if (responseCompleter != null) {
         _pendingResponses.remove(message.streamId);
-        FrameWriter writer = _reservedFrameWriters.remove(message.streamId);
-        _frameWriterPool.release(writer);
+        FrameWriter? writer = _reservedFrameWriters.remove(message.streamId);
+        _frameWriterPool!.release(writer);
       }
 
       _checkForDrainedRequests();
@@ -277,12 +289,12 @@ class Connection {
 
     switch (message.opcode) {
       case Opcode.READY:
-        responseCompleter.complete();
+        responseCompleter?.complete(message);
         break;
       case Opcode.AUTHENTICATE:
       case Opcode.AUTH_CHALLENGE:
       case Opcode.AUTH_SUCCESS:
-        responseCompleter.complete(message);
+        responseCompleter!.complete(message);
         break;
       case Opcode.RESULT:
         if (message is PreparedResultMessage) {
@@ -293,17 +305,20 @@ class Connection {
           resMsg.port = port;
         }
 
-        responseCompleter.complete(message);
+        responseCompleter!.complete(message);
         break;
       case Opcode.EVENT:
-        if (_eventController != null && _eventController.hasListener && !_eventController.isPaused) {
-          _eventController.add(message as EventMessage);
+        if (_eventController != null &&
+            _eventController!.hasListener &&
+            !_eventController!.isPaused) {
+          _eventController!.add(message as EventMessage);
         }
         break;
       case Opcode.ERROR:
         ErrorMessage errorMessage = message as ErrorMessage;
         // connectionLogger.severe(errorMessage.message);
-        responseCompleter.completeError(CassandraException(errorMessage.message));
+        responseCompleter!
+            .completeError(CassandraException(errorMessage.message));
         break;
     }
   }
@@ -315,8 +330,8 @@ class Connection {
 
   void _checkForDrainedRequests() {
     if (_drained != null && _pendingResponses.length == 0) {
-      _drained.complete(true);
-      _socket.close();
+      _drained!.complete(true);
+      _socket!.close();
       _socket = null;
       _connected = null;
     }
@@ -330,7 +345,7 @@ class Connection {
   Future open() {
     // Prevent multiple connection attempts
     if (_connected != null) {
-      return _connected.future;
+      return _connected!.future;
     }
 
     _connectionAttempt = 0;
@@ -350,7 +365,8 @@ class Connection {
    * This method returns a [Future] to be completed when the connection is shut down
    */
 
-  Future close({bool drain: true, Duration drainTimeout: const Duration(seconds: 5)}) {
+  Future close(
+      {bool drain: true, Duration drainTimeout: const Duration(seconds: 5)}) {
     // Already closed
     if (_socket == null) {
       return Future.value();
@@ -369,28 +385,33 @@ class Connection {
 
         if (drainTimeout != null) {
           Future.delayed(drainTimeout).then((_) {
-            if (_drained != null && !_drained.isCompleted) {
-              _abortRequestsAndCleanup(ConnectionLostException('Connection drain timeout')).then((_) {
-                _drained.complete();
+            if (_drained != null && !_drained!.isCompleted) {
+              _abortRequestsAndCleanup(
+                      ConnectionLostException('Connection drain timeout'))
+                  .then((_) {
+                _drained!.complete();
               });
             }
           });
         }
       }
 
-      return _drained.future;
+      return _drained!.future;
     } else {
-      return _abortRequestsAndCleanup(ConnectionLostException('Connection closed'));
+      return _abortRequestsAndCleanup(
+          ConnectionLostException('Connection closed'));
     }
   }
 
-  Future<PreparedResultMessage> prepare(Query query) async {
+  Future<PreparedResultMessage?> prepare(Query query) async {
     await open();
 
     // V3 version of the protocol does not support named placeholders. We need to convert them
     // to positional ones before preparing the statements
     PrepareMessage message = PrepareMessage()
-      ..query = _poolConfig.protocolVersion == ProtocolVersion.V3 ? query.positionalQuery : query.query;
+      ..query = _poolConfig.protocolVersion == ProtocolVersion.V3
+          ? query.positionalQuery
+          : query.query;
 
     return _cast<PreparedResultMessage>(await _writeMessage(message));
   }
@@ -404,8 +425,10 @@ class Connection {
    * This method will returns [ResultMessage] with the query result
    */
 
-  Future<ResultMessage> execute(Query query,
-      {PreparedResultMessage preparedResult: null, int pageSize: null, Uint8List pagingState: null}) async {
+  Future<ResultMessage?> execute(Query query,
+      {PreparedResultMessage? preparedResult: null,
+      int? pageSize: null,
+      Uint8List? pagingState: null}) async {
     await open();
 
     // Simple unprepared query
@@ -424,9 +447,10 @@ class Connection {
       // map them to positional ones
       ExecuteMessage message = ExecuteMessage()
         ..queryId = preparedResult.queryId
-        ..bindings =
-            _poolConfig.protocolVersion == ProtocolVersion.V3 ? query.namedToPositionalBindings : query.bindings
-        ..bindingTypes = preparedResult.metadata.colSpec
+        ..bindings = _poolConfig.protocolVersion == ProtocolVersion.V3
+            ? query.namedToPositionalBindings
+            : query.bindings
+        ..bindingTypes = preparedResult.metadata!.colSpec
         ..consistency = query.consistency
         ..serialConsistency = query.serialConsistency
         ..resultPageSize = pageSize
@@ -440,7 +464,7 @@ class Connection {
    * Execute the supplied batch [query]
    */
 
-  Future<RowsResultMessage> executeBatch(BatchQuery query) async {
+  Future<RowsResultMessage?> executeBatch(BatchQuery query) async {
     await open();
 
     BatchMessage message = BatchMessage()
@@ -457,22 +481,27 @@ class Connection {
    * and return a [Stream<EventMessage>] for handling incoming events
    */
 
-  Stream<EventMessage> listenForEvents(Iterable<EventRegistrationType> eventTypes) {
-    RegisterMessage message = RegisterMessage()..eventTypes = eventTypes;
+  Stream<EventMessage> listenForEvents(
+      Iterable<EventRegistrationType> eventTypes) {
+    RegisterMessage message = RegisterMessage()
+      ..eventTypes = eventTypes as List<EventRegistrationType>?;
 
     // Setup the stream controller
     if (_eventController == null) {
       _eventController = StreamController<EventMessage>();
     }
 
-    open().then((_) => _writeMessage(message)).catchError(_eventController.addError);
-    return _eventController.stream;
+    open()
+        .then((_) => _writeMessage(message))
+        .catchError(_eventController!.addError);
+    return _eventController!.stream as Stream<EventMessage>;
   }
 
   /**
    * Check if the connection has available stream slots for multiplexing additional queries
    */
-  bool get hasAvailableStreams => _frameWriterPool != null && _frameWriterPool.hasAvailableSlots;
+  bool get hasAvailableStreams =>
+      _frameWriterPool != null && _frameWriterPool!.hasAvailableSlots;
 
-  T _cast<T>(x) => x is T ? x : null;
+  T? _cast<T>(x) => x is T ? x : null;
 }

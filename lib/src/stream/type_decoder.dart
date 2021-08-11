@@ -4,10 +4,10 @@ class TypeDecoder {
   int _offset = 0;
   ByteData _buffer;
   Endian endianess = Endian.big;
-  ProtocolVersion protocolVersion;
+  ProtocolVersion? protocolVersion;
 
   TypeDecoder.fromBuffer(
-      ByteData this._buffer, ProtocolVersion this.protocolVersion);
+      ByteData this._buffer, ProtocolVersion? this.protocolVersion);
 
   int readSignedByte() {
     return _buffer.getInt8(_offset++);
@@ -66,7 +66,7 @@ class TypeDecoder {
     return val;
   }
 
-  int readLength(SizeType size) {
+  int readLength(SizeType? size) {
     return size == SizeType.LONG
         ? readInt()
         : (size == SizeType.SHORT ? readShort() : readByte());
@@ -81,7 +81,7 @@ class TypeDecoder {
     _offset += len;
   }
 
-  String readAsciiString(SizeType size, [int len = null]) {
+  String? readAsciiString(SizeType? size, [int? len = null]) {
     if (len == null) {
       len = readLength(size);
       if (len < 0) {
@@ -92,7 +92,7 @@ class TypeDecoder {
     return ascii.decode(Uint8List.view(_buffer.buffer, _offset - len, len));
   }
 
-  String readString(SizeType size, [int len = null]) {
+  String? readString(SizeType? size, [int? len = null]) {
     if (len == null) {
       len = readLength(size);
       if (len < 0) {
@@ -103,7 +103,7 @@ class TypeDecoder {
     return utf8.decode(Uint8List.view(_buffer.buffer, _offset - len, len));
   }
 
-  Uint8List readBytes(SizeType size, [int len = null]) {
+  Uint8List? readBytes(SizeType? size, [int? len = null]) {
     if (len == null) {
       len = readLength(size);
       // Null is defined as a negative length
@@ -119,23 +119,23 @@ class TypeDecoder {
     return Consistency.valueOf(readShort());
   }
 
-  List<String> readStringList(SizeType size) {
+  List<String?> readStringList(SizeType size) {
     int len = readLength(size);
     return List.generate(len, (_) => readString(size));
   }
 
-  Map<String, String> readStringMap(SizeType size) {
+  Map<String?, String?> readStringMap(SizeType size) {
     int len = readLength(size);
     Map map = {};
     while (len-- > 0) {
       map[readString(size)] = readString(size);
     }
-    return map;
+    return map as Map<String?, String?>;
   }
 
-  Map<String, List<String>> readStringMultiMap(SizeType size) {
+  Map<String?, List<String?>> readStringMultiMap(SizeType size) {
     int len = readLength(size);
-    final map = <String, List<String>>{};
+    final Map<String?, List<String?>> map = <String?, List<String>>{};
     while (len-- > 0) {
       map[readString(size)] = readStringList(size);
     }
@@ -196,7 +196,7 @@ class TypeDecoder {
    * but exploits dart vm support for arbitary long ints to parse varInts of any size
    */
 
-  BigInt readVarInt(SizeType size, [int len = null]) {
+  BigInt? readVarInt(SizeType? size, [int? len = null]) {
     if (len == null) {
       len = readLength(size);
       // Null is defined as a negative length
@@ -212,7 +212,7 @@ class TypeDecoder {
     }
 
     // Read bytes
-    Uint8List buf = readBytes(size, len);
+    Uint8List buf = readBytes(size, len)!;
 
     int bytesToCopy = buf.lengthInBytes;
     int bytesToFill = 1;
@@ -241,7 +241,7 @@ class TypeDecoder {
    * but exploits dart vm support for arbitary long ints/doubles to parse decimals of any size
    */
 
-  Object readDecimal(SizeType size, [int len = null]) {
+  Object? readDecimal(SizeType? size, [int? len = null]) {
     if (len == null) {
       len = readLength(size);
       // Null is defined as a negative length
@@ -258,7 +258,7 @@ class TypeDecoder {
     }
 
     // Read bytes
-    Uint8List buf = readBytes(size, len);
+    Uint8List buf = readBytes(size, len)!;
 
     int bytesToCopy = buf.lengthInBytes - 4;
     int bytesToFill = 1;
@@ -285,8 +285,8 @@ class TypeDecoder {
 
   TypeSpec readTypeOption() {
     DataType type = DataType.valueOf(readShort());
-    Object keyType = null;
-    TypeSpec spec = null;
+    Object? keyType = null;
+    TypeSpec? spec = null;
 
     // Collection types and custom type have additional
     // option parameters which we need to parse
@@ -299,7 +299,7 @@ class TypeDecoder {
       case DataType.SET:
         // Value is an option representing the list item type
         spec = TypeSpec(type,
-            keySubType: keyType, valueSubType: readTypeOption());
+            keySubType: keyType as TypeSpec?, valueSubType: readTypeOption());
         break;
       case DataType.MAP:
         // We have two option values, one for the map key type and one for the value type
@@ -331,7 +331,7 @@ class TypeDecoder {
     return spec;
   }
 
-  Object readTypedValue(TypeSpec typeSpec, {SizeType size}) {
+  Object? readTypedValue(TypeSpec? typeSpec, {SizeType? size}) {
     // Read typed value length in bytes
     int lenInBytes = readLength(size);
 
@@ -342,7 +342,7 @@ class TypeDecoder {
       return null;
     }
 
-    switch (typeSpec.valueType) {
+    switch (typeSpec!.valueType) {
       case DataType.ASCII:
         return readAsciiString(size, lenInBytes);
       case DataType.TEXT:
@@ -350,11 +350,11 @@ class TypeDecoder {
         return readString(size, lenInBytes);
       case DataType.UUID:
       case DataType.TIMEUUID:
-        return Uuid.fromBytes(readBytes(size, lenInBytes));
+        return Uuid.fromBytes(readBytes(size, lenInBytes)!);
       case DataType.CUSTOM:
         // If a codec has been specified for this type, use that; otherwise return the
         // serialized data as a Uint8 list
-        Codec typeCodec = getCodec(typeSpec.customTypeClass);
+        Codec? typeCodec = getCodec(typeSpec.customTypeClass);
         return typeCodec != null
             ? typeCodec.decode(readBytes(size, lenInBytes))
             : readBytes(size, lenInBytes);
@@ -376,7 +376,7 @@ class TypeDecoder {
       case DataType.INET:
         // INET can be either 4 (ipv4) or 16 (ipv6) bytes long
         if (lenInBytes == 4) {
-          Uint8List buf = readBytes(SizeType.BYTE, lenInBytes);
+          Uint8List buf = readBytes(SizeType.BYTE, lenInBytes)!;
           return InternetAddress(buf.join("."));
         } else if (lenInBytes == 16) {
           return InternetAddress(
@@ -432,7 +432,7 @@ class TypeDecoder {
         return readVarInt(size, lenInBytes);
       case DataType.UDT:
         Map udt = LinkedHashMap();
-        typeSpec.udtFields.forEach((String name, TypeSpec udtSpec) =>
+        typeSpec.udtFields.forEach((String? name, TypeSpec udtSpec) =>
             udt[name] = readTypedValue(udtSpec, size: size));
         return udt;
       case DataType.TUPLE:

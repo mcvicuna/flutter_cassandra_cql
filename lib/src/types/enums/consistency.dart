@@ -18,7 +18,7 @@ class Consistency extends Enum<int> {
   String toString() => "0x${value.toRadixString(16)}";
 
   static Consistency valueOf(int value) {
-    Consistency fromValue = value == ANY._value
+    Consistency? fromValue = value == ANY._value
         ? ANY
         : value == ONE._value
             ? ONE
@@ -49,8 +49,8 @@ class Consistency extends Enum<int> {
     return fromValue;
   }
 
-  static String nameOf(Consistency value) {
-    String name = value == ANY
+  static String? nameOf(Consistency value) {
+    String? name = value == ANY
         ? "ANY"
         : value == ONE
             ? "ONE"

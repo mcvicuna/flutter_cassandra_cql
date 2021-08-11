@@ -1,19 +1,19 @@
 part of dart_cassandra_cql.protocol;
 
 class EventMessage extends Message {
-  EventRegistrationType type;
-  EventType subType;
+  EventRegistrationType? type;
+  EventType? subType;
 
   // Filled in for topology/status messages
-  InternetAddress address;
-  int port;
+  InternetAddress? address;
+  int? port;
 
   // Filled in for schema messages
-  String keyspace;
-  String changedTable;
+  String? keyspace;
+  String? changedTable;
 
   // V3-only
-  String changedType;
+  String? changedType;
 
   EventMessage.parse(TypeDecoder decoder) : super(Opcode.EVENT) {
     type = EventRegistrationType.valueOf(decoder.readString(SizeType.SHORT));
@@ -23,7 +23,7 @@ class EventMessage extends Message {
       case EventRegistrationType.TOPOLOGY_CHANGE:
       case EventRegistrationType.STATUS_CHANGE:
         address = decoder.readTypedValue(TypeSpec(DataType.INET),
-            size: SizeType.BYTE);
+            size: SizeType.BYTE) as InternetAddress?;
         port = decoder.readInt();
         break;
       case EventRegistrationType.SCHEMA_CHANGE:
@@ -32,13 +32,13 @@ class EventMessage extends Message {
             keyspace = decoder.readString(SizeType.SHORT);
 
             // According to the spec, this should be an empty string if only the keyspace changed
-            String tableName = decoder.readString(SizeType.SHORT);
+            String? tableName = decoder.readString(SizeType.SHORT);
             changedTable =
                 tableName == null || tableName.isEmpty ? null : tableName;
 
             break;
           case ProtocolVersion.V3:
-            String target = decoder.readString(SizeType.SHORT);
+            String? target = decoder.readString(SizeType.SHORT);
             keyspace = decoder.readString(SizeType.SHORT);
 
             switch (target) {

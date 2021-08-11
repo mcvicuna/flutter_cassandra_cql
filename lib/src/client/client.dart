@@ -2,7 +2,7 @@ part of dart_cassandra_cql.client;
 
 class Client {
   final ConnectionPool connectionPool;
-  final Map<String, Future<PreparedResultMessage>> preparedQueries =
+  final Map<String, Future<PreparedResultMessage?>> preparedQueries =
       Map<String, Future<PreparedResultMessage>>();
 
   /**
@@ -12,7 +12,7 @@ class Client {
    */
 
   factory Client.fromHostList(List<String> hosts,
-      {String defaultKeyspace, PoolConfiguration poolConfig}) {
+      {String? defaultKeyspace, PoolConfiguration? poolConfig}) {
     final connectionPool = SimpleConnectionPool.fromHostList(
         hosts, poolConfig == null ? PoolConfiguration() : poolConfig,
         defaultKeyspace: defaultKeyspace);
@@ -24,7 +24,7 @@ class Client {
    * Create a new client with an already setup [connectionPool]. If a [defaultKeyspace]
    * is provided, it will be auto-selected during the handshake phase of each pool connection.
    */
-  Client.withPool(this.connectionPool, {String defaultKeyspace});
+  Client.withPool(this.connectionPool, {String? defaultKeyspace});
 
   /**
    * Execute a [Query] or [BatchQuery] and return back a [Future<ResultMessage>]. Depending on
@@ -32,8 +32,8 @@ class Client {
    * [SetKeyspaceResultMessage] or [SchemaChangeResultMessage]. The optional [pageSize] and [pagingState]
    * params may be supplied to enable pagination when performing single queries.
    */
-  Future<ResultMessage> execute(QueryInterface query,
-      {int pageSize: null, Uint8List pagingState: null}) {
+  Future<ResultMessage?> execute(QueryInterface query,
+      {int? pageSize: null, Uint8List? pagingState: null}) {
     return (query is BatchQuery)
         ? _executeBatch(query)
         : _executeSingle(query as Query,
@@ -44,7 +44,7 @@ class Client {
    * Execute a select query and return back a [Iterable] of [Map<String, Object>] with the
    * result rows.
    */
-  Future<Iterable<Map<String, Object>>> query(Query query) async {
+  Future<Iterable<Map<String?, Object?>>?> query(Query query) async {
     // Run query and return back
     return (await _executeSingle(query)).rows;
   }
@@ -72,7 +72,7 @@ class Client {
   /**
    * Prepare the given query and return back a [Future] with a [PreparedResultMessage]
    */
-  Future<PreparedResultMessage> _prepare(Query query) {
+  Future<PreparedResultMessage?>? _prepare(Query query) {
     // If the query is preparing/already prepared, return its future
     if (preparedQueries.containsKey(query.query)) {
       return preparedQueries[query.query];
@@ -91,7 +91,7 @@ class Client {
    * and return back a [Future<ResultMessage>]
    */
   Future<ResultMessage> _executeSingle(Query query,
-      {int pageSize: null, Uint8List pagingState: null}) async {
+      {int? pageSize: null, Uint8List? pagingState: null}) async {
     final completer = Completer<ResultMessage>();
 
     // If this is a normal query, pick the next available pool connection and execute it
@@ -117,10 +117,10 @@ class Client {
 
     void _prepareAndExecute() {
       // Prepare query; any error will make our returned future fail
-      _prepare(query)
+      _prepare(query)!
           // Fetch a connection for the node this query was prepared at and execute it
-          .then((PreparedResultMessage preparedResult) => connectionPool
-                  .getConnectionToHost(preparedResult.host, preparedResult.port)
+          .then((PreparedResultMessage? preparedResult) => connectionPool
+                  .getConnectionToHost(preparedResult!.host, preparedResult.port)
                   .then((Connection conn) => conn.execute(query,
                       preparedResult: preparedResult,
                       pageSize: pageSize,
@@ -147,7 +147,7 @@ class Client {
   /**
    * Execute a batch [query] and return back a [Future<ResultMessage>]
    */
-  Future<ResultMessage> _executeBatch(BatchQuery query) {
+  Future<ResultMessage?> _executeBatch(BatchQuery query) {
     return connectionPool
         .getConnection()
         .then((Connection conn) => conn.executeBatch(query));

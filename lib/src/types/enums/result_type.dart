@@ -12,7 +12,7 @@ class ResultType extends Enum<int> {
   String toString() => "0x${value.toRadixString(16)}";
 
   static ResultType valueOf(int value) {
-    ResultType fromValue = value == VOID._value
+    ResultType? fromValue = value == VOID._value
         ? VOID
         : value == ROWS._value
             ? ROWS

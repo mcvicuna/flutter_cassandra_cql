@@ -18,8 +18,8 @@ main({bool enableLogger: true}) {
   final custom.CustomJson customJsonInstance = new custom.CustomJson({});
 
   group("Serialization", () {
-    TypeEncoder encoder;
-    SizeType size;
+    late TypeEncoder encoder;
+    late SizeType size;
 
     group("Exceptions:", () {
       setUp(() {
@@ -35,7 +35,7 @@ main({bool enableLogger: true}) {
         test("Missing key/valueSubTYpe", () {
           expect(
               () => new TypeSpec(DataType.MAP),
-              throwsA(predicate((e) =>
+              throwsA(predicate((dynamic e) =>
                   e is ArgumentError &&
                   e.message ==
                       "MAP type should specify TypeSpec instances for both its keys and values")));
@@ -43,7 +43,7 @@ main({bool enableLogger: true}) {
           expect(
               () => new TypeSpec(DataType.MAP,
                   keySubType: new TypeSpec(DataType.ASCII)),
-              throwsA(predicate((e) =>
+              throwsA(predicate((dynamic e) =>
                   e is ArgumentError &&
                   e.message ==
                       "MAP type should specify TypeSpec instances for both its keys and values")));
@@ -51,7 +51,7 @@ main({bool enableLogger: true}) {
           expect(
               () => new TypeSpec(DataType.MAP,
                   valueSubType: new TypeSpec(DataType.ASCII)),
-              throwsA(predicate((e) =>
+              throwsA(predicate((dynamic e) =>
                   e is ArgumentError &&
                   e.message ==
                       "MAP type should specify TypeSpec instances for both its keys and values")));
@@ -60,14 +60,14 @@ main({bool enableLogger: true}) {
         test("Missing valueSubType", () {
           expect(
               () => new TypeSpec(DataType.LIST),
-              throwsA(predicate((e) =>
+              throwsA(predicate((dynamic e) =>
                   e is ArgumentError &&
                   e.message ==
                       "LIST type should specify a TypeSpec instance for its values")));
 
           expect(
               () => new TypeSpec(DataType.SET),
-              throwsA(predicate((e) =>
+              throwsA(predicate((dynamic e) =>
                   e is ArgumentError &&
                   e.message ==
                       "SET type should specify a TypeSpec instance for its values")));
@@ -80,7 +80,7 @@ main({bool enableLogger: true}) {
         expect(
             () => encoder.writeTypedValue('test', input,
                 typeSpec: type, size: size),
-            throwsA(predicate((e) =>
+            throwsA(predicate((dynamic e) =>
                 e is ArgumentError &&
                 e.message ==
                     "Expected value for field 'test' of type TIMESTAMP to be an instance of DateTime")));
@@ -92,7 +92,7 @@ main({bool enableLogger: true}) {
         expect(
             () => encoder.writeTypedValue('test', input,
                 typeSpec: type, size: size),
-            throwsA(predicate((e) =>
+            throwsA(predicate((dynamic e) =>
                 e is ArgumentError &&
                 e.message ==
                     "Expected value for field 'test' of type CUSTOM to be an instance of Uint8List OR an instance of CustomType with a registered type handler")));
@@ -100,7 +100,7 @@ main({bool enableLogger: true}) {
         expect(
             () => encoder.writeTypedValue('test', new Uint16List.fromList([]),
                 typeSpec: type, size: size),
-            throwsA(predicate((e) =>
+            throwsA(predicate((dynamic e) =>
                 e is ArgumentError &&
                 e.message ==
                     "Expected value for field 'test' of type CUSTOM to be an instance of Uint8List OR an instance of CustomType with a registered type handler")));
@@ -109,7 +109,7 @@ main({bool enableLogger: true}) {
         expect(
             () => encoder.writeTypedValue('test', customJsonInstance,
                 typeSpec: type, size: size),
-            throwsA(predicate((e) =>
+            throwsA(predicate((dynamic e) =>
                 e is ArgumentError &&
                 e.message ==
                     "No custom type handler codec registered for custom type: ${customJsonInstance.customTypeClass}")));
@@ -118,7 +118,7 @@ main({bool enableLogger: true}) {
         expect(
             () => encoder.writeTypedValue('test', input,
                 typeSpec: type, size: size),
-            throwsA(predicate((e) =>
+            throwsA(predicate((dynamic e) =>
                 e is ArgumentError &&
                 e.message ==
                     "Expected value for field 'test' of type BLOB to be an instance of Uint8List")));
@@ -130,7 +130,7 @@ main({bool enableLogger: true}) {
         expect(
             () => encoder.writeTypedValue('test', input,
                 typeSpec: type, size: size),
-            throwsA(predicate((e) =>
+            throwsA(predicate((dynamic e) =>
                 e is ArgumentError &&
                 e.message ==
                     "Expected value for field 'test' of type INET to be an instance of InternetAddress")));
@@ -143,7 +143,7 @@ main({bool enableLogger: true}) {
         expect(
             () => encoder.writeTypedValue('test', input,
                 typeSpec: type, size: size),
-            throwsA(predicate((e) =>
+            throwsA(predicate((dynamic e) =>
                 e is ArgumentError &&
                 e.message ==
                     "Expected value for field 'test' of type LIST to implement Iterable")));
@@ -152,7 +152,7 @@ main({bool enableLogger: true}) {
         expect(
             () => encoder.writeTypedValue('test', input,
                 typeSpec: type, size: size),
-            throwsA(predicate((e) =>
+            throwsA(predicate((dynamic e) =>
                 e is ArgumentError &&
                 e.message ==
                     "Expected value for field 'test' of type SET to implement Iterable")));
@@ -166,7 +166,7 @@ main({bool enableLogger: true}) {
         expect(
             () => encoder.writeTypedValue('test', input,
                 typeSpec: type, size: size),
-            throwsA(predicate((e) =>
+            throwsA(predicate((dynamic e) =>
                 e is ArgumentError &&
                 e.message ==
                     "Expected value for field 'test' of type MAP to implement Map")));
@@ -175,7 +175,7 @@ main({bool enableLogger: true}) {
         expect(
             () => encoder.writeTypedValue('test', input,
                 typeSpec: type, size: size),
-            throwsA(predicate((e) =>
+            throwsA(predicate((dynamic e) =>
                 e is ArgumentError &&
                 e.message ==
                     "Expected value for field 'test' of type UDT to implement Map")));
@@ -187,7 +187,7 @@ main({bool enableLogger: true}) {
         expect(
             () => encoder.writeTypedValue('test', input,
                 typeSpec: type, size: size),
-            throwsA(predicate((e) =>
+            throwsA(predicate((dynamic e) =>
                 e is ArgumentError &&
                 e.message ==
                     "Expected value for field 'test' of type TUPLE to be an instance of Tuple")));
@@ -477,7 +477,7 @@ main({bool enableLogger: true}) {
             Object output =
                 mock.createDecoder(encoder).readTypedValue(type, size: size);
 
-            expect(output, closeTo(input, 0.000001));
+            expect(output, closeTo(input as num, 0.000001));
           });
 
           test("(negative)", () {
@@ -487,7 +487,7 @@ main({bool enableLogger: true}) {
             Object output =
                 mock.createDecoder(encoder).readTypedValue(type, size: size);
 
-            expect(output, closeTo(input, 0.000001));
+            expect(output, closeTo(input as num, 0.000001));
           });
         });
 
@@ -499,7 +499,7 @@ main({bool enableLogger: true}) {
             Object output =
                 mock.createDecoder(encoder).readTypedValue(type, size: size);
 
-            expect(output, closeTo(input, 0.000001));
+            expect(output, closeTo(input as num, 0.000001));
           });
 
           test("(negative)", () {
@@ -509,7 +509,7 @@ main({bool enableLogger: true}) {
             Object output =
                 mock.createDecoder(encoder).readTypedValue(type, size: size);
 
-            expect(output, closeTo(input, 0.000001));
+            expect(output, closeTo(input as num, 0.000001));
           });
         });
 
@@ -521,7 +521,7 @@ main({bool enableLogger: true}) {
             Object output =
                 mock.createDecoder(encoder).readTypedValue(type, size: size);
 
-            expect(output, closeTo(input, pow(10, -DECIMAL_FRACTION_DIGITS)));
+            expect(output, closeTo(input as num, pow(10, -DECIMAL_FRACTION_DIGITS)));
           });
 
           test("(negative)", () {
@@ -531,7 +531,7 @@ main({bool enableLogger: true}) {
             Object output =
                 mock.createDecoder(encoder).readTypedValue(type, size: size);
 
-            expect(output, closeTo(input, pow(10, -DECIMAL_FRACTION_DIGITS)));
+            expect(output, closeTo(input as num, pow(10, -DECIMAL_FRACTION_DIGITS)));
           });
         });
 
@@ -820,7 +820,7 @@ main({bool enableLogger: true}) {
             Object output =
                 mock.createDecoder(encoder).readTypedValue(type, size: size);
 
-            expect(output, closeTo(input, 0.000001));
+            expect(output, closeTo(input as num, 0.000001));
           });
 
           test("(negative)", () {
@@ -830,7 +830,7 @@ main({bool enableLogger: true}) {
             Object output =
                 mock.createDecoder(encoder).readTypedValue(type, size: size);
 
-            expect(output, closeTo(input, 0.000001));
+            expect(output, closeTo(input as num, 0.000001));
           });
         });
 
@@ -842,7 +842,7 @@ main({bool enableLogger: true}) {
             Object output =
                 mock.createDecoder(encoder).readTypedValue(type, size: size);
 
-            expect(output, closeTo(input, 0.000001));
+            expect(output, closeTo(input as num, 0.000001));
           });
 
           test("(negative)", () {
@@ -852,7 +852,7 @@ main({bool enableLogger: true}) {
             Object output =
                 mock.createDecoder(encoder).readTypedValue(type, size: size);
 
-            expect(output, closeTo(input, 0.000001));
+            expect(output, closeTo(input as num, 0.000001));
           });
         });
 
@@ -864,7 +864,7 @@ main({bool enableLogger: true}) {
             Object output =
                 mock.createDecoder(encoder).readTypedValue(type, size: size);
 
-            expect(output, closeTo(input, pow(10, -DECIMAL_FRACTION_DIGITS)));
+            expect(output, closeTo(input as num, pow(10, -DECIMAL_FRACTION_DIGITS)));
           });
 
           test("(negative)", () {
@@ -874,7 +874,7 @@ main({bool enableLogger: true}) {
             Object output =
                 mock.createDecoder(encoder).readTypedValue(type, size: size);
 
-            expect(output, closeTo(input, pow(10, -DECIMAL_FRACTION_DIGITS)));
+            expect(output, closeTo(input as num, pow(10, -DECIMAL_FRACTION_DIGITS)));
           });
         });
 

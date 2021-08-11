@@ -22,7 +22,7 @@ class ErrorCode extends Enum<int> {
   String toString() => "0x${value.toRadixString(16)}";
 
   static ErrorCode valueOf(int value) {
-    ErrorCode fromValue = value == SERVER_ERROR._value
+    ErrorCode? fromValue = value == SERVER_ERROR._value
         ? SERVER_ERROR
         : value == PROTOCOL_ERROR._value
             ? PROTOCOL_ERROR
